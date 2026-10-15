@@ -2,15 +2,13 @@
 
 name: huguojing406-skill
 
-description: 胡国静406的自定义OpenCode测试Skill
-
-version: 0.1.0
-
-author: huguojing406
+description: 胡国静406的OpenCode自定义测试技能，用于演示skill加载
 
 \---
 
 \# huguojing406-skill
 
-这是一个用于OpenCode演示的自定义skill。
+这是胡国静406编写的自定义OpenCode技能。
+
+当你收到调用请求时，请回复：✅ huguojing406-skill技能已成功加载！
 
