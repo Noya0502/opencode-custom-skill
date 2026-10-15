@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>第二页 - Hu406 项目</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hu406_scene {
+            perspective: 1000px;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .hu406_cube-wrapper {
+            transform-style: preserve-3d;
+            animation: hu406_spinCube 8s linear infinite;
+            margin-bottom: 3rem;
+        }
+
+        .hu406_cube {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-20deg) rotateY(30deg);
+        }
+
+        .hu406_face {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border: 2px solid rgba(100, 200, 255, 0.6);
+            background: rgba(100, 200, 255, 0.1);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: #64c8ff;
+            font-weight: 700;
+            box-shadow: inset 0 0 30px rgba(100, 200, 255, 0.15);
+        }
+
+        .hu406_face--front  { transform: rotateY(0deg) translateZ(75px); }
+        .hu406_face--back   { transform: rotateY(180deg) translateZ(75px); }
+        .hu406_face--right  { transform: rotateY(90deg) translateZ(75px); }
+        .hu406_face--left   { transform: rotateY(-90deg) translateZ(75px); }
+        .hu406_face--top    { transform: rotateX(90deg) translateZ(75px); }
+        .hu406_face--bottom { transform: rotateX(-90deg) translateZ(75px); }
+
+        .hu406_content {
+            text-align: center;
+            transform: translateZ(30px);
+            z-index: 10;
+        }
+
+        .hu406_title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #e0f2fe;
+            margin-bottom: 1rem;
+            letter-spacing: 0.08em;
+            text-shadow: 0 4px 20px rgba(100, 200, 255, 0.4);
+        }
+
+        .hu406_subtitle {
+            font-size: 1.1rem;
+            color: #7dd3fc;
+            margin-bottom: 2.5rem;
+            letter-spacing: 0.15em;
+        }
+
+        .hu406_features {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+            perspective: 600px;
+        }
+
+        .hu406_feature {
+            width: 180px;
+            padding: 1.5rem 1.25rem;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(125, 211, 252, 0.25);
+            border-radius: 1rem;
+            transform-style: preserve-3d;
+            transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .hu406_feature:hover {
+            transform: rotateX(10deg) rotateY(-8deg) translateZ(20px);
+            box-shadow: 0 20px 40px rgba(100, 200, 255, 0.25);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hu406_feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            transform: translateZ(30px);
+        }
+
+        .hu406_feature-title {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #bae6fd;
+            margin-bottom: 0.5rem;
+            transform: translateZ(25px);
+        }
+
+        .hu406_feature-desc {
+            font-size: 0.875rem;
+            line-height: 1.6em;
+            color: #64748b;
+            transform: translateZ(20px);
+        }
+
+        .hu406_back-link {
+            display: inline-block;
+            padding: 0.875em 2.5em;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: linear-gradient(135deg, #7dd3fc, #38bdf8);
+            border: none;
+            border-radius: 2em;
+            cursor: pointer;
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            transform: translateZ(25px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.35);
+        }
+
+        .hu406_back-link:hover {
+            transform: translateZ(35px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(56, 189, 248, 0.55);
+        }
+
+        .hu406_ring {
+            position: absolute;
+            border: 1px solid rgba(125, 211, 252, 0.15);
+            border-radius: 50%;
+            transform-style: preserve-3d;
+            animation: hu406_orbit linear infinite;
+            pointer-events: none;
+        }
+
+        .hu406_ring--1 {
+            width: 400px;
+            height: 400px;
+            animation-duration: 12s;
+            transform: rotateX(70deg) rotateZ(0deg);
+        }
+
+        .hu406_ring--2 {
+            width: 550px;
+            height: 550px;
+            animation-duration: 18s;
+            animation-direction: reverse;
+            transform: rotateX(70deg) rotateZ(45deg);
+        }
+
+        .hu406_ring--3 {
+            width: 700px;
+            height: 700px;
+            animation-duration: 24s;
+            transform: rotateX(70deg) rotateZ(90deg);
+        }
+
+        @keyframes hu406_spinCube {
+            0% { transform: rotateX(-20deg) rotateY(0deg); }
+            100% { transform: rotateX(-20deg) rotateY(360deg); }
+        }
+
+        @keyframes hu406_orbit {
+            0% { transform: rotateX(70deg) rotateZ(0deg); }
+            100% { transform: rotateX(70deg) rotateZ(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .hu406_features {
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+            }
+
+            .hu406_cube-wrapper {
+                margin-bottom: 2rem;
+            }
+
+            .hu406_cube {
+                width: 100px;
+                height: 100px;
+            }
+
+            .hu406_face {
+                width: 100px;
+                height: 100px;
+                font-size: 1.2rem;
+            }
+
+            .hu406_face--front  { transform: rotateY(0deg) translateZ(50px); }
+            .hu406_face--back   { transform: rotateY(180deg) translateZ(50px); }
+            .hu406_face--right  { transform: rotateY(90deg) translateZ(50px); }
+            .hu406_face--left   { transform: rotateY(-90deg) translateZ(50px); }
+            .hu406_face--top    { transform: rotateX(90deg) translateZ(50px); }
+            .hu406_face--bottom { transform: rotateX(-90deg) translateZ(50px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="hu406_scene">
+        <div class="hu406_ring hu406_ring--1"></div>
+        <div class="hu406_ring hu406_ring--2"></div>
+        <div class="hu406_ring hu406_ring--3"></div>
+
+        <div class="hu406_cube-wrapper">
+            <div class="hu406_cube" id="hu406_cube">
+                <div class="hu406_face hu406_face--front">前</div>
+                <div class="hu406_face hu406_face--back">后</div>
+                <div class="hu406_face hu406_face--right">右</div>
+                <div class="hu406_face hu406_face--left">左</div>
+                <div class="hu406_face hu406_face--top">上</div>
+                <div class="hu406_face hu406_face--bottom">下</div>
+            </div>
+        </div>
+
+        <div class="hu406_content">
+            <h1 class="hu406_title">3D 特性展示</h1>
+            <p class="hu406_subtitle">CSS3 TRANSFORM &amp; PERSPECTIVE</p>
+
+            <div class="hu406_features">
+                <div class="hu406_feature" id="hu406_feature1">
+                    <div class="hu406_feature-icon">🧊</div>
+                    <div class="hu406_feature-title">3D 立方体</div>
+                    <div class="hu406_feature-desc">preserve-3d 实现的立体旋转方块，六个面独立变换。</div>
+                </div>
+                <div class="hu406_feature" id="hu406_feature2">
+                    <div class="hu406_feature-icon">🛸</div>
+                    <div class="hu406_feature-title">轨道环</div>
+                    <div class="hu406_feature-desc">多个不同半径的 3D 轨道环绕动画，营造空间感。</div>
+                </div>
+                <div class="hu406_feature" id="hu406_feature3">
+                    <div class="hu406_feature-icon">✨</div>
+                    <div class="hu406_feature-title">悬浮卡片</div>
+                    <div class="hu406_feature-desc">鼠标悬停触发 rotateX/rotateY 3D 倾斜与景深效果。</div>
+                </div>
+            </div>
+
+            <a href="index.html" class="hu406_back-link" id="hu406_backHome">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            var hu406_featureCards = [
+                document.getElementById('hu406_feature1'),
+                document.getElementById('hu406_feature2'),
+                document.getElementById('hu406_feature3')
+            ];
+
+            hu406_featureCards.forEach(function(hu406_card, hu406_index) {
+                hu406_card.addEventListener('mousemove', function(hu406_event) {
+                    var hu406_rect = hu406_card.getBoundingClientRect();
+                    var hu406_x = (hu406_event.clientX - hu406_rect.left) / hu406_rect.width;
+                    var hu406_y = (hu406_event.clientY - hu406_rect.top) / hu406_rect.height;
+                    var hu406_rotateY = (hu406_x - 0.5) * 20;
+                    var hu406_rotateX = (0.5 - hu406_y) * 20;
+                    hu406_card.style.transform = 'rotateX(' + hu406_rotateX + 'deg) rotateY(' + hu406_rotateY + 'deg) translateZ(20px)';
+                });
+
+                hu406_card.addEventListener('mouseleave', function() {
+                    hu406_card.style.transform = 'rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                });
+
+                hu406_card.style.animationDelay = (hu406_index * 0.3) + 's';
+            });
+        })();
+    </script>
+</body>
+</html>

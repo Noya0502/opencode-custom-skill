@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hu406_CSS3_3D_Animation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .hu406_container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hu406_scene {
+            perspective: 1000px;
+            perspective-origin: 50% 50%;
+        }
+
+        .hu406_cube {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: translateZ(-100px) rotateX(-20deg) rotateY(30deg);
+        }
+
+        .hu406_face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.3), 0 0 50px rgba(0,0,0,0.5);
+        }
+
+        .hu406_front  { background: linear-gradient(45deg, #ff6b6b, #ee5a5a); transform: rotateY(0deg) translateZ(100px); }
+        .hu406_back   { background: linear-gradient(45deg, #4ecdc4, #44a08d); transform: rotateY(180deg) translateZ(100px); }
+        .hu406_right  { background: linear-gradient(45deg, #45b7d1, #3a9bc1); transform: rotateY(90deg) translateZ(100px); }
+        .hu406_left   { background: linear-gradient(45deg, #f9ca24, #f0932b); transform: rotateY(-90deg) translateZ(100px); }
+        .hu406_top    { background: linear-gradient(45deg, #6c5ce7, #5a4fd6); transform: rotateX(90deg) translateZ(100px); }
+        .hu406_bottom { background: linear-gradient(45deg, #a29bfe, #8c82e0); transform: rotateX(-90deg) translateZ(100px); }
+
+        @keyframes hu406_rotateCube {
+            0% { transform: translateZ(-100px) rotateX(0deg) rotateY(0deg); }
+            25% { transform: translateZ(-100px) rotateX(180deg) rotateY(90deg); }
+            50% { transform: translateZ(-100px) rotateX(360deg) rotateY(180deg); }
+            75% { transform: translateZ(-100px) rotateX(180deg) rotateY(270deg); }
+            100% { transform: translateZ(-100px) rotateX(360deg) rotateY(360deg); }
+        }
+
+        .hu406_info {
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+            margin-top: 3rem;
+            padding: 0 1rem;
+        }
+
+        .hu406_info h2 {
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hu406_info p {
+            font-size: clamp(0.9rem, 2vw, 1.2rem);
+            line-height: 1.6;
+        }
+
+        .hu406_link {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 50px;
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .hu406_link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .hu406_card {
+            perspective: 800px;
+            margin-top: 3rem;
+        }
+
+        .hu406_card_inner {
+            width: 300px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 0 auto;
+        }
+
+        .hu406_card:hover .hu406_card_inner {
+            transform: rotateY(180deg);
+        }
+
+        .hu406_card_face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .hu406_card_front {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .hu406_card_back {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .hu406_particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .hu406_particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: radial-gradient(circle, #fff 0%, transparent 70%);
+            border-radius: 50%;
+            animation: hu406_float 6s infinite ease-in-out;
+        }
+
+        @keyframes hu406_float {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0; }
+            10% { opacity: 1; }
+            50% { transform: translate3d(var(--tx), var(--ty), var(--tz)) scale(0.5); }
+            90% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="hu406_link">返回首页</a>
+
+    <div class="hu406_container">
+        <div class="hu406_particles" id="hu406_particles"></div>
+
+        <div class="hu406_scene">
+            <div class="hu406_cube" id="hu406_cube">
+                <div class="hu406_face hu406_front">Front</div>
+                <div class="hu406_face hu406_back">Back</div>
+                <div class="hu406_face hu406_right">Right</div>
+                <div class="hu406_face hu406_left">Left</div>
+                <div class="hu406_face hu406_top">Top</div>
+                <div class="hu406_face hu406_bottom">Bottom</div>
+            </div>
+        </div>
+
+        <div class="hu406_info">
+            <h2>CSS3 3D 立方体动画</h2>
+            <p>使用 perspective、transform-style: preserve-3d、rotateX、rotateY 实现真 3D 效果</p>
+        </div>
+
+        <div class="hu406_card">
+            <div class="hu406_card_inner">
+                <div class="hu406_card_face hu406_card_front">
+                    <h3>悬停翻转卡片</h3>
+                    <p>鼠标悬停体验 3D 翻转</p>
+                </div>
+                <div class="hu406_card_face hu406_card_back">
+                    <h3>背面内容</h3>
+                    <p>CSS3 3D Transform 魔力</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const hu406_particlesContainer = document.getElementById('hu406_particles');
+        const hu406_particleCount = 30;
+
+        for (let i = 0; i < hu406_particleCount; i++) {
+            const hu406_particle = document.createElement('div');
+            hu406_particle.className = 'hu406_particle';
+            hu406_particle.style.left = Math.random() * 100 + '%';
+            hu406_particle.style.top = Math.random() * 100 + '%';
+            hu406_particle.style.animationDelay = Math.random() * 6 + 's';
+            hu406_particle.style.animationDuration = (4 + Math.random() * 4) + 's';
+            hu406_particle.style.setProperty('--tx', (Math.random() - 0.5) * 400 + 'px');
+            hu406_particle.style.setProperty('--ty', (Math.random() - 0.5) * 400 + 'px');
+            hu406_particle.style.setProperty('--tz', (Math.random() - 0.5) * 400 + 'px');
+            hu406_particlesContainer.appendChild(hu406_particle);
+        }
+
+        const hu406_cube = document.getElementById('hu406_cube');
+        let hu406_mouseX = 0, hu406_mouseY = 0;
+        let hu406_currentX = -20, hu406_currentY = 30;
+        let hu406_autoRotate = 30;
+
+        document.addEventListener('mousemove', (e) => {
+            hu406_mouseX = (e.clientX / window.innerWidth - 0.5) * 40;
+            hu406_mouseY = (e.clientY / window.innerHeight - 0.5) * -40;
+        });
+
+        function hu406_animate() {
+            hu406_autoRotate += 0.3;
+            hu406_currentX += (hu406_mouseX - hu406_currentX) * 0.05;
+            hu406_currentY += (hu406_mouseY - hu406_currentY) * 0.05;
+            hu406_cube.style.transform = `translateZ(-100px) rotateX(${hu406_currentX}deg) rotateY(${hu406_autoRotate + hu406_currentY}deg)`;
+            requestAnimationFrame(hu406_animate);
+        }
+        hu406_animate();
+    </script>
+</body>
+</html>
