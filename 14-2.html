@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>14-2 JavaScript六种基础数据类型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e1b4b, #312e81);
+            min-height: 100vh;
+            color: #f1f5f9;
+            padding: 2rem 1rem 3rem;
+            overflow-x: hidden;
+        }
+
+        .hgj_page {
+            max-width: 960px;
+            width: 90%;
+            margin: 0 auto;
+            perspective: 1200px;
+        }
+
+        .hgj_back-link {
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            padding: 0.7em 1.5em;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2em;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .hgj_back-link:hover {
+            background: rgba(129, 140, 248, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .hgj_header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .hgj_title {
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, #818cf8, #c084fc, #22d3ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.75rem;
+        }
+
+        .hgj_subtitle {
+            font-size: 1rem;
+            color: #94a3b8;
+            letter-spacing: 0.12em;
+        }
+
+        /* 六种数据类型卡片：3D 翻转 */
+        .hgj_grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .hgj_card {
+            height: 220px;
+            cursor: pointer;
+            perspective: 900px;
+        }
+
+        .hgj_card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hgj_card:hover .hgj_card-inner,
+        .hgj_card.hgj_flipped .hgj_card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .hgj_card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        .hgj_card-front {
+            border: 1px solid rgba(129, 140, 248, 0.35);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+        }
+
+        .hgj_card-back {
+            transform: rotateY(180deg);
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            background: linear-gradient(135deg, rgba(30, 27, 75, 0.95), rgba(15, 23, 42, 0.95));
+        }
+
+        .hgj_type-glyph {
+            font-size: 2.2rem;
+            font-weight: 800;
+            width: 64px;
+            height: 64px;
+            line-height: 64px;
+            border-radius: 50%;
+            margin-bottom: 0.9rem;
+            transform: translateZ(30px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .hgj_type-string  .hgj_type-glyph { background: linear-gradient(135deg, #f472b6, #fb7185); }
+        .hgj_type-number  .hgj_type-glyph { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .hgj_type-boolean .hgj_type-glyph { background: linear-gradient(135deg, #34d399, #10b981); }
+        .hgj_type-undefined .hgj_type-glyph { background: linear-gradient(135deg, #94a3b8, #64748b); }
+        .hgj_type-null    .hgj_type-glyph { background: linear-gradient(135deg, #38bdf8, #0ea5e9); }
+        .hgj_type-symbol  .hgj_type-glyph { background: linear-gradient(135deg, #a78bfa, #8b5cf6); }
+
+        .hgj_type-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .hgj_type-tip {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            line-height: 1.6em;
+        }
+
+        .hgj_code {
+            font-family: Consolas, monospace;
+            font-size: 0.85rem;
+            line-height: 1.7em;
+            color: #7dd3fc;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 0.5em;
+            padding: 0.9em 1em;
+            width: 100%;
+            text-align: left;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .hgj_code .hgj_result {
+            color: #86efac;
+            font-weight: 700;
+        }
+
+        /* 运行结果面板 */
+        .hgj_console-wrap {
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease;
+        }
+
+        .hgj_console-wrap:hover {
+            transform: rotateX(4deg) rotateY(-4deg) translateZ(15px);
+        }
+
+        .hgj_console {
+            background: rgba(2, 6, 23, 0.85);
+            border: 1px solid rgba(129, 140, 248, 0.35);
+            border-radius: 1rem;
+            padding: 1.5rem 1.75rem;
+            font-family: Consolas, monospace;
+            font-size: 0.9rem;
+            line-height: 1.9em;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+        }
+
+        .hgj_console-title {
+            font-family: "Microsoft YaHei", sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #c7d2fe;
+            margin-bottom: 0.9rem;
+        }
+
+        .hgj_console-line {
+            color: #e2e8f0;
+        }
+
+        .hgj_console-line .hgj_c-key { color: #c084fc; }
+        .hgj_console-line .hgj_c-value { color: #fbbf24; }
+        .hgj_console-line .hgj_c-result { color: #86efac; font-weight: 700; }
+
+        .hgj_note {
+            margin-top: 1.5rem;
+            padding: 1rem 1.4rem;
+            font-size: 0.85rem;
+            line-height: 1.8em;
+            color: #94a3b8;
+            border-left: 3px solid #818cf8;
+            background: rgba(129, 140, 248, 0.08);
+            border-radius: 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .hgj_page { width: 94%; }
+            .hgj_back-link { top: 1rem; right: 1rem; font-size: 0.85rem; }
+            .hgj_grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 姓名：胡国静，日期：JavaScript六种基础数据类型演示 -->
+    <a href="index.html" class="hgj_back-link">← 返回首页</a>
+
+    <div class="hgj_page">
+        <header class="hgj_header">
+            <h1 class="hgj_title">JavaScript 六种基础数据类型</h1>
+            <p class="hgj_subtitle">STRING · NUMBER · BOOLEAN · UNDEFINED · NULL · SYMBOL</p>
+        </header>
+
+        <div class="hgj_grid" id="hgj_grid">
+            <div class="hgj_card hgj_type-string" id="hgj_card_string">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">S</div>
+                        <div class="hgj_type-name">String 字符串</div>
+                        <div class="hgj_type-tip">由零个或多个字符组成的文本，使用单引号或双引号包裹</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_string"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hgj_card hgj_type-number" id="hgj_card_number">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">N</div>
+                        <div class="hgj_type-name">Number 数值</div>
+                        <div class="hgj_type-tip">整数与浮点数，包含 NaN、Infinity 等特殊值</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_number"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hgj_card hgj_type-boolean" id="hgj_card_boolean">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">B</div>
+                        <div class="hgj_type-name">Boolean 布尔</div>
+                        <div class="hgj_type-tip">只有 true 和 false 两个字面量，用于逻辑判断</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_boolean"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hgj_card hgj_type-undefined" id="hgj_card_undefined">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">U</div>
+                        <div class="hgj_type-name">Undefined 未定义</div>
+                        <div class="hgj_type-tip">变量声明后未赋值时的默认值</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_undefined"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hgj_card hgj_type-null" id="hgj_card_null">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">∅</div>
+                        <div class="hgj_type-name">Null 空</div>
+                        <div class="hgj_type-tip">表示"空值"，通常用于主动清空对象引用</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_null"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hgj_card hgj_type-symbol" id="hgj_card_symbol">
+                <div class="hgj_card-inner">
+                    <div class="hgj_card-face hgj_card-front">
+                        <div class="hgj_type-glyph">Sym</div>
+                        <div class="hgj_type-name">Symbol 符号</div>
+                        <div class="hgj_type-tip">ES6 新增，每个 Symbol 值都独一无二，常用作对象属性名</div>
+                    </div>
+                    <div class="hgj_card-face hgj_card-back">
+                        <div class="hgj_code" id="hgj_demo_symbol"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hgj_console-wrap">
+            <div class="hgj_console" id="hgj_console">
+                <div class="hgj_console-title">▸ 运行结果（typeof 演示）</div>
+                <div id="hgj_console_body"></div>
+            </div>
+        </div>
+
+        <div class="hgj_note">
+            注：Symbol 是 ES6 新增的第六种基础（原始）数据类型；ES2020 又新增了 BigInt。
+            另外，typeof null 返回 "object" 是 JavaScript 早期的历史遗留 Bug，判断 null 应使用 hgj_nullValue === null。
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ===== 定义六种基础数据类型 =====
+            var hgj_stringValue   = '胡国静';        // String 字符串
+            var hgj_numberValue   = 2026;           // Number 数值
+            var hgj_booleanValue  = true;           // Boolean 布尔
+            var hgj_undefinedValue;                 // Undefined 未定义（声明未赋值）
+            var hgj_nullValue     = null;           // Null 空
+            var hgj_symbolValue   = Symbol('hgj');  // Symbol 符号（ES6）
+
+            // ===== 卡片背面：示例代码与运行结果 =====
+            var hgj_demos = [
+                { id: 'hgj_demo_string',    lines: [
+                    'var hgj_stringValue = "胡国静";',
+                    'typeof hgj_stringValue  =>  <span class="hgj_result">' + (typeof hgj_stringValue) + '</span>'
+                ]},
+                { id: 'hgj_demo_number',    lines: [
+                    'var hgj_numberValue = 2026;',
+                    'typeof hgj_numberValue  =>  <span class="hgj_result">' + (typeof hgj_numberValue) + '</span>'
+                ]},
+                { id: 'hgj_demo_boolean',   lines: [
+                    'var hgj_booleanValue = true;',
+                    'typeof hgj_booleanValue =>  <span class="hgj_result">' + (typeof hgj_booleanValue) + '</span>'
+                ]},
+                { id: 'hgj_demo_undefined', lines: [
+                    'var hgj_undefinedValue;',
+                    'typeof hgj_undefinedValue => <span class="hgj_result">' + (typeof hgj_undefinedValue) + '</span>'
+                ]},
+                { id: 'hgj_demo_null',      lines: [
+                    'var hgj_nullValue = null;',
+                    'hgj_nullValue === null  =>  <span class="hgj_result">' + (hgj_nullValue === null) + '</span>',
+                    'typeof hgj_nullValue    =>  <span class="hgj_result">' + (typeof hgj_nullValue) + '</span>（历史遗留Bug）'
+                ]},
+                { id: 'hgj_demo_symbol',    lines: [
+                    'var hgj_symbolValue = Symbol("hgj");',
+                    'typeof hgj_symbolValue  =>  <span class="hgj_result">' + (typeof hgj_symbolValue) + '</span>'
+                ]}
+            ];
+
+            hgj_demos.forEach(function(hgj_item) {
+                document.getElementById(hgj_item.id).innerHTML = hgj_item.lines.join('\n');
+            });
+
+            // ===== 控制台面板：逐行输出定义与 typeof 结果 =====
+            var hgj_consoleBody = document.getElementById('hgj_console_body');
+            var hgj_rows = [
+                ['hgj_stringValue',   '"胡国静"', 'string'],
+                ['hgj_numberValue',   '2026',     'number'],
+                ['hgj_booleanValue',  'true',     'boolean'],
+                ['hgj_undefinedValue','undefined','undefined'],
+                ['hgj_nullValue',     'null',     'object *'],
+                ['hgj_symbolValue',   'Symbol(hgj)', 'symbol']
+            ];
+
+            hgj_rows.forEach(function(hgj_row) {
+                var hgj_line = document.createElement('div');
+                hgj_line.className = 'hgj_console-line';
+                hgj_line.innerHTML =
+                    'var <span class="hgj_c-key">' + hgj_row[0] + '</span> = <span class="hgj_c-value">' + hgj_row[1] + '</span>;' +
+                    '  // typeof => <span class="hgj_c-result">"' + hgj_row[2] + '"</span>';
+                hgj_consoleBody.appendChild(hgj_line);
+            });
+
+            // ===== 点击卡片翻转（兼容触屏设备） =====
+            var hgj_cards = document.querySelectorAll('.hgj_card');
+            hgj_cards.forEach(function(hgj_card) {
+                hgj_card.addEventListener('click', function() {
+                    hgj_card.classList.toggle('hgj_flipped');
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -22,7 +22,7 @@
             overflow: hidden;
         }
 
-        .hu406_scene {
+        .hgj_scene {
             perspective: 800px;
             width: 100vw;
             height: 100vh;
@@ -33,12 +33,12 @@
             position: relative;
         }
 
-        .hu406_card-container {
+        .hgj_card-container {
             transform-style: preserve-3d;
-            animation: hu406_float 4s ease-in-out infinite;
+            animation: hgj_float 4s ease-in-out infinite;
         }
 
-        .hu406_card {
+        .hgj_card {
             width: 320px;
             height: 420px;
             background: rgba(255, 255, 255, 0.08);
@@ -57,14 +57,14 @@
             transition: transform 0.4s ease, box-shadow 0.4s ease;
         }
 
-        .hu406_card:hover {
+        .hgj_card:hover {
             transform: rotateX(8deg) rotateY(-12deg) translateZ(30px);
             box-shadow:
                 0 40px 80px rgba(99, 102, 241, 0.35),
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
-        .hu406_icon {
+        .hgj_icon {
             width: 96px;
             height: 96px;
             border-radius: 50%;
@@ -76,10 +76,10 @@
             font-size: 3rem;
             transform: translateZ(50px);
             box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
-            animation: hu406_pulse 2s ease-in-out infinite;
+            animation: hgj_pulse 2s ease-in-out infinite;
         }
 
-        .hu406_title {
+        .hgj_title {
             font-size: 1.75rem;
             font-weight: 700;
             color: #f1f5f9;
@@ -88,7 +88,7 @@
             transform: translateZ(40px);
         }
 
-        .hu406_desc {
+        .hgj_desc {
             font-size: 1rem;
             line-height: 1.7em;
             color: #94a3b8;
@@ -97,7 +97,7 @@
             transform: translateZ(30px);
         }
 
-        .hu406_btn {
+        .hgj_btn {
             display: inline-block;
             padding: 0.875em 2.5em;
             font-size: 1rem;
@@ -114,19 +114,19 @@
             box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
         }
 
-        .hu406_btn:hover {
+        .hgj_btn:hover {
             transform: translateZ(45px) scale(1.05);
             box-shadow: 0 12px 35px rgba(99, 102, 241, 0.6);
         }
 
-        .hu406_nav {
+        .hgj_nav {
             position: absolute;
             top: 2rem;
             right: 3rem;
             transform: translateZ(20px);
         }
 
-        .hu406_nav a {
+        .hgj_nav a {
             color: #a5b4fc;
             text-decoration: none;
             font-size: 1.1rem;
@@ -136,12 +136,12 @@
             transition: background 0.3s ease, color 0.3s ease;
         }
 
-        .hu406_nav a:hover {
+        .hgj_nav a:hover {
             background: rgba(165, 180, 252, 0.15);
             color: #ffffff;
         }
 
-        .hu406_particles {
+        .hgj_particles {
             position: absolute;
             top: 0;
             left: 0;
@@ -152,33 +152,33 @@
             pointer-events: none;
         }
 
-        .hu406_particle {
+        .hgj_particle {
             position: absolute;
             width: 6px;
             height: 6px;
             background: rgba(165, 180, 252, 0.6);
             border-radius: 50%;
-            animation: hu406_rise linear infinite;
+            animation: hgj_rise linear infinite;
         }
 
-        .hu406_particle:nth-child(1) { left: 10%; animation-duration: 8s; animation-delay: 0s; }
-        .hu406_particle:nth-child(2) { left: 25%; animation-duration: 10s; animation-delay: 1s; }
-        .hu406_particle:nth-child(3) { left: 40%; animation-duration: 7s; animation-delay: 2s; }
-        .hu406_particle:nth-child(4) { left: 55%; animation-duration: 9s; animation-delay: 0.5s; }
-        .hu406_particle:nth-child(5) { left: 70%; animation-duration: 11s; animation-delay: 1.5s; }
-        .hu406_particle:nth-child(6) { left: 85%; animation-duration: 8.5s; animation-delay: 3s; }
+        .hgj_particle:nth-child(1) { left: 10%; animation-duration: 8s; animation-delay: 0s; }
+        .hgj_particle:nth-child(2) { left: 25%; animation-duration: 10s; animation-delay: 1s; }
+        .hgj_particle:nth-child(3) { left: 40%; animation-duration: 7s; animation-delay: 2s; }
+        .hgj_particle:nth-child(4) { left: 55%; animation-duration: 9s; animation-delay: 0.5s; }
+        .hgj_particle:nth-child(5) { left: 70%; animation-duration: 11s; animation-delay: 1.5s; }
+        .hgj_particle:nth-child(6) { left: 85%; animation-duration: 8.5s; animation-delay: 3s; }
 
-        @keyframes hu406_float {
+        @keyframes hgj_float {
             0%, 100% { transform: rotateX(5deg) rotateY(-5deg) translateY(0px); }
             50% { transform: rotateX(-3deg) rotateY(5deg) translateY(-15px); }
         }
 
-        @keyframes hu406_pulse {
+        @keyframes hgj_pulse {
             0%, 100% { transform: translateZ(50px) scale(1); }
             50% { transform: translateZ(50px) scale(1.08); }
         }
 
-        @keyframes hu406_rise {
+        @keyframes hgj_rise {
             0% { transform: translateY(100vh) rotateX(0deg); opacity: 0; }
             10% { opacity: 1; }
             90% { opacity: 1; }
@@ -186,7 +186,7 @@
         }
 
         @media (max-width: 768px) {
-            .hu406_card {
+            .hgj_card {
                 width: 85vw;
                 height: auto;
                 min-height: 380px;
@@ -195,54 +195,55 @@
     </style>
 </head>
 <body>
-    <div class="hu406_scene">
-        <div class="hu406_particles">
-            <div class="hu406_particle"></div>
-            <div class="hu406_particle"></div>
-            <div class="hu406_particle"></div>
-            <div class="hu406_particle"></div>
-            <div class="hu406_particle"></div>
-            <div class="hu406_particle"></div>
+    <!-- 姓名：胡国静，日期：首页 -->
+    <div class="hgj_scene">
+        <div class="hgj_particles">
+            <div class="hgj_particle"></div>
+            <div class="hgj_particle"></div>
+            <div class="hgj_particle"></div>
+            <div class="hgj_particle"></div>
+            <div class="hgj_particle"></div>
+            <div class="hgj_particle"></div>
         </div>
-        <nav class="hu406_nav">
+        <nav class="hgj_nav">
             <a href="page2.html">第二页 →</a>
         </nav>
-        <div class="hu406_card-container">
-            <div class="hu406_card" id="hu406_mainCard">
-                <div class="hu406_icon">🚀</div>
-                <h1 class="hu406_title">Hu406 项目</h1>
-                <p class="hu406_desc">
+        <div class="hgj_card-container">
+            <div class="hgj_card" id="hgj_mainCard">
+                <div class="hgj_icon">🚀</div>
+                <h1 class="hgj_title">Hu406 项目</h1>
+                <p class="hgj_desc">
                     欢迎来到 Hu406 静态站点。<br>
                     本页面展示了 CSS3 3D 动画效果，<br>
                     包括透视、3D 变换与悬浮交互。
                 </p>
-                <a href="page2.html" class="hu406_btn" id="hu406_navBtn">进入第二页</a>
+                <a href="page2.html" class="hgj_btn" id="hgj_navBtn">进入第二页</a>
             </div>
         </div>
     </div>
 
     <script>
         (function() {
-            var hu406_card = document.getElementById('hu406_mainCard');
-            var hu406_targetX = 0;
-            var hu406_targetY = 0;
-            var hu406_currentX = 0;
-            var hu406_currentY = 0;
+            var hgj_card = document.getElementById('hgj_mainCard');
+            var hgj_targetX = 0;
+            var hgj_targetY = 0;
+            var hgj_currentX = 0;
+            var hgj_currentY = 0;
 
-            document.addEventListener('mousemove', function(hu406_event) {
-                var hu406_centerX = window.innerWidth / 2;
-                var hu406_centerY = window.innerHeight / 2;
-                hu406_targetX = (hu406_event.clientX - hu406_centerX) / hu406_centerX * -10;
-                hu406_targetY = (hu406_event.clientY - hu406_centerY) / hu406_centerY * 10;
+            document.addEventListener('mousemove', function(hgj_event) {
+                var hgj_centerX = window.innerWidth / 2;
+                var hgj_centerY = window.innerHeight / 2;
+                hgj_targetX = (hgj_event.clientX - hgj_centerX) / hgj_centerX * -10;
+                hgj_targetY = (hgj_event.clientY - hgj_centerY) / hgj_centerY * 10;
             });
 
-            function hu406_animate() {
-                hu406_currentX += (hu406_targetX - hu406_currentX) * 0.08;
-                hu406_currentY += (hu406_targetY - hu406_currentY) * 0.08;
-                hu406_card.style.transform = 'rotateX(' + hu406_currentY + 'deg) rotateY(' + hu406_currentX + 'deg) translateZ(20px)';
-                requestAnimationFrame(hu406_animate);
+            function hgj_animate() {
+                hgj_currentX += (hgj_targetX - hgj_currentX) * 0.08;
+                hgj_currentY += (hgj_targetY - hgj_currentY) * 0.08;
+                hgj_card.style.transform = 'rotateX(' + hgj_currentY + 'deg) rotateY(' + hgj_currentX + 'deg) translateZ(20px)';
+                requestAnimationFrame(hgj_animate);
             }
-            hu406_animate();
+            hgj_animate();
         })();
     </script>
 </body>
