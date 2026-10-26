@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>15-2 JavaScript程序结构 · 条件与循环</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+            min-height: 100vh;
+            color: #f1f5f9;
+            padding: 2rem 1rem 3rem;
+        }
+
+        .hgj_page {
+            max-width: 1000px;
+            width: 92%;
+            margin: 0 auto;
+            perspective: 1200px;
+        }
+
+        .hgj_back-link {
+            position: fixed;
+            top: 1.5rem;
+            right: 2rem;
+            padding: 0.7em 1.5em;
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 2em;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 100;
+        }
+
+        .hgj_back-link:hover {
+            background: rgba(34, 211, 238, 0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .hgj_header {
+            text-align: center;
+            margin-bottom: 2rem;
+            transform-style: preserve-3d;
+        }
+
+        .hgj_title {
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #22d3ee, #a78bfa, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            transform: translateZ(40px);
+        }
+
+        .hgj_subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            transform: translateZ(30px);
+        }
+
+        /* 标签切换 */
+        .hgj_tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            transform: rotateX(2deg);
+        }
+
+        .hgj_tab {
+            padding: 0.7em 1.6em;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: 1px solid rgba(129, 140, 248, 0.35);
+            border-radius: 2em;
+            background: rgba(255, 255, 255, 0.05);
+            color: #c7d2fe;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hgj_tab:hover {
+            background: rgba(129, 140, 248, 0.2);
+            transform: translateZ(10px);
+        }
+
+        .hgj_tab.hgj_active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
+        }
+
+        /* 代码演示卡片 */
+        .hgj_section {
+            display: none;
+            transform-style: preserve-3d;
+            animation: hgj_fade 0.4s ease;
+        }
+
+        .hgj_section.hgj_show { display: block; }
+
+        @keyframes hgj_fade {
+            from { opacity: 0; transform: rotateY(5deg) translateZ(-10px); }
+            to   { opacity: 1; transform: rotateY(0) translateZ(0); }
+        }
+
+        .hgj_demo-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(129, 140, 248, 0.25);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            backdrop-filter: blur(6px);
+            transform: rotateX(1deg);
+            transition: transform 0.4s ease;
+        }
+
+        .hgj_demo-card:hover {
+            transform: rotateX(2deg) rotateY(-2deg) translateZ(15px);
+        }
+
+        .hgj_demo-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #c7d2fe;
+            margin-bottom: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .hgj_badge {
+            font-size: 0.7rem;
+            padding: 0.2em 0.6em;
+            border-radius: 1em;
+            background: rgba(99, 102, 241, 0.3);
+            color: #e0e7ff;
+        }
+
+        .hgj_code {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.85rem;
+            line-height: 1.7em;
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 0.5rem;
+            padding: 1rem 1.2rem;
+            color: #e2e8f0;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .hgj_code .hgj_c-kw  { color: #c084fc; font-weight: 700; }
+        .hgj_code .hgj_c-str { color: #86efac; }
+        .hgj_code .hgj_c-num { color: #fbbf24; }
+        .hgj_code .hgj_c-cmt { color: #64748b; font-style: italic; }
+        .hgj_code .hgj_c-fn  { color: #7dd3fc; }
+
+        .hgj_run-btn {
+            margin-top: 0.9rem;
+            padding: 0.6em 1.4em;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            border-radius: 2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hgj_run-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .hgj_output {
+            margin-top: 0.8rem;
+            padding: 0.9rem 1rem;
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            border-radius: 0.5rem;
+            font-family: Consolas, monospace;
+            font-size: 0.85rem;
+            line-height: 1.7em;
+            color: #86efac;
+            min-height: 2.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .hgj_input-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        .hgj_input {
+            padding: 0.5em 0.9em;
+            font-size: 0.9rem;
+            border-radius: 0.4em;
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            background: rgba(2, 6, 23, 0.6);
+            color: #f1f5f9;
+            width: 120px;
+        }
+
+        .hgj_input:focus {
+            outline: none;
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+        }
+
+        .hgj_small-btn {
+            padding: 0.5em 1.2em;
+            font-size: 0.85rem;
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 1.5em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hgj_small-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4);
+        }
+
+        @media (max-width: 640px) {
+            .hgj_page { width: 94%; }
+            .hgj_back-link { top: 1rem; right: 1rem; font-size: 0.85rem; }
+            .hgj_tabs { flex-wrap: wrap; }
+            .hgj_code { font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- 姓名：胡国静，日期：JavaScript程序结构-条件与循环 -->
+    <a href="index.html" class="hgj_back-link">← 返回首页</a>
+
+    <div class="hgj_page">
+        <header class="hgj_header">
+            <h1 class="hgj_title">JavaScript 程序结构</h1>
+            <p class="hgj_subtitle">条件判断 · 循环迭代 · 交互式演示</p>
+        </header>
+
+        <!-- Tabs 切换 -->
+        <div class="hgj_tabs">
+            <button class="hgj_tab hgj_active" data-tab="hgj_cond">条件判断</button>
+            <button class="hgj_tab" data-tab="hgj_for">for 循环</button>
+            <button class="hgj_tab" data-tab="hgj_while">while / do-while</button>
+            <button class="hgj_tab" data-tab="hgj_forin">for-in / for-of</button>
+        </div>
+
+        <!-- ====== 条件判断 ====== -->
+        <section class="hgj_section hgj_show" id="hgj_cond">
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">if-else</span> 分数等级判断</div>
+                <div class="hgj_code"><span class="hgj_c-kw">function</span> <span class="hgj_c-fn">hgj_getGrade</span>(hgj_score) {
+    <span class="hgj_c-kw">if</span> (hgj_score >= <span class="hgj_c-num">90</span>) <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'A 优秀'</span>;
+    <span class="hgj_c-kw">else if</span> (hgj_score >= <span class="hgj_c-num">80</span>) <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'B 良好'</span>;
+    <span class="hgj_c-kw">else if</span> (hgj_score >= <span class="hgj_c-num">60</span>) <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'C 及格'</span>;
+    <span class="hgj_c-kw">else</span> <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'D 不及格'</span>;
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_cond_if_score" type="number" placeholder="输入分数 0-100" min="0" max="100" value="85">
+                    <button class="hgj_small-btn" onclick="hgj_cond_if_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_cond_if_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">switch</span> 星期判断</div>
+                <div class="hgj_code"><span class="hgj_c-kw">function</span> <span class="hgj_c-fn">hgj_weekDay</span>(hgj_day) {
+    <span class="hgj_c-kw">switch</span> (hgj_day) {
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">1</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期一'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">2</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期二'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">3</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期三'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">4</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期四'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">5</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期五'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">6</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期六'</span>;
+        <span class="hgj_c-kw">case</span> <span class="hgj_c-num">7</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'星期日'</span>;
+        <span class="hgj_c-kw">default</span>: <span class="hgj_c-kw">return</span> <span class="hgj_c-str">'无效输入'</span>;
+    }
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_cond_switch_day" type="number" placeholder="输入 1-7" min="1" max="7" value="3">
+                    <button class="hgj_small-btn" onclick="hgj_cond_switch_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_cond_switch_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">三元表达式</span> 奇偶判断</div>
+                <div class="hgj_code"><span class="hgj_c-kw">function</span> <span class="hgj_c-fn">hgj_oddOrEven</span>(hgj_n) {
+    <span class="hgj_c-kw">return</span> hgj_n % <span class="hgj_c-num">2</span> === <span class="hgj_c-num">0</span> ? <span class="hgj_c-str">'偶数'</span> : <span class="hgj_c-str">'奇数'</span>;
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_cond_tern_n" type="number" placeholder="输入整数" value="42">
+                    <button class="hgj_small-btn" onclick="hgj_cond_tern_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_cond_tern_out">等待运行…</div>
+            </div>
+        </section>
+
+        <!-- ====== for 循环 ====== -->
+        <section class="hgj_section" id="hgj_for">
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">for 递增</span> 1 到 N 求和</div>
+                <div class="hgj_code"><span class="hgj_c-kw">var</span> hgj_sum = <span class="hgj_c-num">0</span>;
+<span class="hgj_c-kw">for</span> (<span class="hgj_c-kw">var</span> hgj_i = <span class="hgj_c-num">1</span>; hgj_i <= hgj_n; hgj_i++) {
+    hgj_sum += hgj_i;
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_for_sum_n" type="number" placeholder="N 值" value="10">
+                    <button class="hgj_small-btn" onclick="hgj_for_sum_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_for_sum_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">for 递减 + break</span> 倒计时到 0</div>
+                <div class="hgj_code"><span class="hgj_c-kw">for</span> (<span class="hgj_c-kw">var</span> hgj_i = hgj_start; hgj_i >= <span class="hgj_c-num">0</span>; hgj_i--) {
+    hgj_log(hgj_i + <span class="hgj_c-str">' '</span>);
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_for_countdown" type="number" placeholder="起始值" value="5">
+                    <button class="hgj_small-btn" onclick="hgj_for_countdown_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_for_countdown_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">break / continue</span> 跳过偶数，遇到 0 停止</div>
+                <div class="hgj_code"><span class="hgj_c-kw">for</span> (<span class="hgj_c-kw">var</span> hgj_i = <span class="hgj_c-num">1</span>; hgj_i <= hgj_n; hgj_i++) {
+    <span class="hgj_c-kw">if</span> (hgj_i === <span class="hgj_c-num">0</span>) <span class="hgj_c-kw">break</span>;       <span class="hgj_c-cmt">// 遇到 0 停止</span>
+    <span class="hgj_c-kw">if</span> (hgj_i % <span class="hgj_c-num">2</span> === <span class="hgj_c-num">0</span>) <span class="hgj_c-kw">continue</span>; <span class="hgj_c-cmt">// 跳过偶数</span>
+    hgj_log(hgj_i + <span class="hgj_c-str">' '</span>);
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_for_break_n" type="number" placeholder="上限" value="10">
+                    <button class="hgj_small-btn" onclick="hgj_for_break_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_for_break_out">等待运行…</div>
+            </div>
+        </section>
+
+        <!-- ====== while / do-while ====== -->
+        <section class="hgj_section" id="hgj_while">
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">while</span> 求 2 的幂次（不超过上限）</div>
+                <div class="hgj_code"><span class="hgj_c-kw">var</span> hgj_pow = <span class="hgj_c-num">1</span>;
+<span class="hgj_c-kw">while</span> (hgj_pow <= hgj_limit) {
+    hgj_log(hgj_pow + <span class="hgj_c-str">' '</span>);
+    hgj_pow *= <span class="hgj_c-num">2</span>;
+}</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_while_pow" type="number" placeholder="上限" value="100">
+                    <button class="hgj_small-btn" onclick="hgj_while_pow_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_while_pow_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">do-while</span> 至少执行一次，直到累加和超过阈值</div>
+                <div class="hgj_code"><span class="hgj_c-kw">var</span> hgj_total = <span class="hgj_c-num">0</span>, hgj_i = <span class="hgj_c-num">1</span>;
+<span class="hgj_c-kw">do</span> {
+    hgj_total += hgj_i;
+    hgj_log(<span class="hgj_c-str">'i='</span> + hgj_i + <span class="hgj_c-str">' total='</span> + hgj_total);
+    hgj_i++;
+} <span class="hgj_c-kw">while</span> (hgj_total <= hgj_threshold);</div>
+                <div class="hgj_input-row">
+                    <input class="hgj_input" id="hgj_dowhile_thr" type="number" placeholder="阈值" value="20">
+                    <button class="hgj_small-btn" onclick="hgj_dowhile_run()">运行</button>
+                </div>
+                <div class="hgj_output" id="hgj_dowhile_out">等待运行…</div>
+            </div>
+        </section>
+
+        <!-- ====== for-in / for-of ====== -->
+        <section class="hgj_section" id="hgj_forin">
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">for-in</span> 遍历对象的所有键</div>
+                <div class="hgj_code"><span class="hgj_c-kw">var</span> hgj_person = {
+    <span class="hgj_c-str">'姓名'</span>: <span class="hgj_c-str">'胡国静'</span>,
+    <span class="hgj_c-str">'年龄'</span>: <span class="hgj_c-num">20</span>,
+    <span class="hgj_c-str">'爱好'</span>: <span class="hgj_c-str">'编程'</span>
+};
+<span class="hgj_c-kw">for</span> (<span class="hgj_c-kw">var</span> hgj_key <span class="hgj_c-kw">in</span> hgj_person) {
+    hgj_log(hgj_key + <span class="hgj_c-str">': '</span> + hgj_person[hgj_key]);
+}</div>
+                <button class="hgj_run-btn" onclick="hgj_forin_obj_run()">运行 →</button>
+                <div class="hgj_output" id="hgj_forin_obj_out">等待运行…</div>
+            </div>
+
+            <div class="hgj_demo-card">
+                <div class="hgj_demo-title"><span class="hgj_badge">for-of</span> 遍历数组的每个元素（ES6）</div>
+                <div class="hgj_code"><span class="hgj_c-kw">var</span> hgj_arr = [<span class="hgj_c-str">'苹果'</span>, <span class="hgj_c-str">'香蕉'</span>, <span class="hgj_c-str">'西瓜'</span>, <span class="hgj_c-str">'葡萄'</span>];
+<span class="hgj_c-kw">for</span> (<span class="hgj_c-kw">var</span> hgj_item <span class="hgj_c-kw">of</span> hgj_arr) {
+    hgj_log(<span class="hgj_c-str">'🍎 '</span> + hgj_item);
+}</div>
+                <button class="hgj_run-btn" onclick="hgj_forof_arr_run()">运行 →</button>
+                <div class="hgj_output" id="hgj_forof_arr_out">等待运行…</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        (function() {
+            // ===== Tab 切换 =====
+            var hgj_tabs = document.querySelectorAll('.hgj_tab');
+            var hgj_sections = document.querySelectorAll('.hgj_section');
+
+            hgj_tabs.forEach(function(hgj_tab) {
+                hgj_tab.addEventListener('click', function() {
+                    var hgj_target = hgj_tab.getAttribute('data-tab');
+                    hgj_tabs.forEach(function(t) { t.classList.remove('hgj_active'); });
+                    hgj_sections.forEach(function(s) { s.classList.remove('hgj_show'); });
+                    hgj_tab.classList.add('hgj_active');
+                    document.getElementById(hgj_target).classList.add('hgj_show');
+                });
+            });
+
+            // ===== 工具：输出到面板 =====
+            window.hgj_log = function(hgj_text, hgj_outId) {
+                // 占位，下面各 run 函数里各自拼接
+            };
+        })();
+
+        // ====== 条件判断演示 ======
+
+        function hgj_cond_if_run() {
+            var hgj_score = Number(document.getElementById('hgj_cond_if_score').value);
+            var hgj_out = document.getElementById('hgj_cond_if_out');
+            if (isNaN(hgj_score) || hgj_score < 0 || hgj_score > 100) {
+                hgj_out.textContent = '⚠ 请输入 0~100 之间的数字';
+                return;
+            }
+            var hgj_grade;
+            if (hgj_score >= 90) hgj_grade = 'A 优秀';
+            else if (hgj_score >= 80) hgj_grade = 'B 良好';
+            else if (hgj_score >= 60) hgj_grade = 'C 及格';
+            else hgj_grade = 'D 不及格';
+            hgj_out.textContent = '输入 ' + hgj_score + ' → ' + hgj_grade;
+        }
+
+        function hgj_cond_switch_run() {
+            var hgj_day = Number(document.getElementById('hgj_cond_switch_day').value);
+            var hgj_out = document.getElementById('hgj_cond_switch_out');
+            var hgj_week;
+            switch (hgj_day) {
+                case 1: hgj_week = '星期一'; break;
+                case 2: hgj_week = '星期二'; break;
+                case 3: hgj_week = '星期三'; break;
+                case 4: hgj_week = '星期四'; break;
+                case 5: hgj_week = '星期五'; break;
+                case 6: hgj_week = '星期六'; break;
+                case 7: hgj_week = '星期日'; break;
+                default: hgj_week = '无效输入';
+            }
+            hgj_out.textContent = 'switch(' + hgj_day + ') → ' + hgj_week;
+        }
+
+        function hgj_cond_tern_run() {
+            var hgj_n = Number(document.getElementById('hgj_cond_tern_n').value);
+            var hgj_out = document.getElementById('hgj_cond_tern_out');
+            if (isNaN(hgj_n)) { hgj_out.textContent = '⚠ 请输入数字'; return; }
+            var hgj_result = hgj_n % 2 === 0 ? '偶数' : '奇数';
+            hgj_out.textContent = hgj_n + ' 是 ' + hgj_result;
+        }
+
+        // ====== for 循环演示 ======
+
+        function hgj_for_sum_run() {
+            var hgj_n = Number(document.getElementById('hgj_for_sum_n').value);
+            var hgj_out = document.getElementById('hgj_for_sum_out');
+            if (isNaN(hgj_n) || hgj_n < 1) { hgj_out.textContent = '⚠ 请输入正整数'; return; }
+            var hgj_sum = 0, hgj_detail = '';
+            for (var hgj_i = 1; hgj_i <= hgj_n; hgj_i++) {
+                hgj_sum += hgj_i;
+                hgj_detail += (hgj_i === 1 ? '' : ' + ') + hgj_i;
+            }
+            hgj_out.textContent = hgj_detail + ' = ' + hgj_sum;
+        }
+
+        function hgj_for_countdown_run() {
+            var hgj_start = Number(document.getElementById('hgj_for_countdown').value);
+            var hgj_out = document.getElementById('hgj_for_countdown_out');
+            if (isNaN(hgj_start) || hgj_start < 0) { hgj_out.textContent = '⚠ 请输入非负整数'; return; }
+            var hgj_line = '';
+            for (var hgj_i = hgj_start; hgj_i >= 0; hgj_i--) {
+                hgj_line += hgj_i + ' ';
+            }
+            hgj_out.textContent = '倒计时: ' + hgj_line.trim();
+        }
+
+        function hgj_for_break_run() {
+            var hgj_n = Number(document.getElementById('hgj_for_break_n').value);
+            var hgj_out = document.getElementById('hgj_for_break_out');
+            if (isNaN(hgj_n) || hgj_n < 1) { hgj_out.textContent = '⚠ 请输入正整数'; return; }
+            var hgj_result = '';
+            for (var hgj_i = 1; hgj_i <= hgj_n; hgj_i++) {
+                if (hgj_i === 0) break;
+                if (hgj_i % 2 === 0) continue;
+                hgj_result += hgj_i + ' ';
+            }
+            hgj_out.textContent = '跳过偶数 → ' + hgj_result.trim();
+        }
+
+        // ====== while / do-while 演示 ======
+
+        function hgj_while_pow_run() {
+            var hgj_limit = Number(document.getElementById('hgj_while_pow').value);
+            var hgj_out = document.getElementById('hgj_while_pow_out');
+            if (isNaN(hgj_limit) || hgj_limit < 1) { hgj_out.textContent = '⚠ 请输入正整数'; return; }
+            var hgj_pow = 1, hgj_line = '';
+            while (hgj_pow <= hgj_limit) {
+                hgj_line += hgj_pow + ' ';
+                hgj_pow *= 2;
+            }
+            hgj_out.textContent = '2 的幂次 ≤ ' + hgj_limit + ': ' + hgj_line.trim();
+        }
+
+        function hgj_dowhile_run() {
+            var hgj_threshold = Number(document.getElementById('hgj_dowhile_thr').value);
+            var hgj_out = document.getElementById('hgj_dowhile_out');
+            if (isNaN(hgj_threshold)) { hgj_out.textContent = '⚠ 请输入数字'; return; }
+            var hgj_total = 0, hgj_i = 1, hgj_lines = '';
+            do {
+                hgj_total += hgj_i;
+                hgj_lines += 'i=' + hgj_i + ' total=' + hgj_total + '\n';
+                hgj_i++;
+            } while (hgj_total <= hgj_threshold);
+            hgj_out.textContent = hgj_lines + '最终超过阈值 ' + hgj_threshold + '，停止累加';
+        }
+
+        // ====== for-in / for-of 演示 ======
+
+        function hgj_forin_obj_run() {
+            var hgj_person = { '姓名': '胡国静', '年龄': 20, '爱好': '编程' };
+            var hgj_out = document.getElementById('hgj_forin_obj_out');
+            var hgj_lines = '';
+            for (var hgj_key in hgj_person) {
+                hgj_lines += hgj_key + ': ' + hgj_person[hgj_key] + '\n';
+            }
+            hgj_out.textContent = hgj_lines.trim();
+        }
+
+        function hgj_forof_arr_run() {
+            var hgj_arr = ['苹果', '香蕉', '西瓜', '葡萄'];
+            var hgj_out = document.getElementById('hgj_forof_arr_out');
+            var hgj_lines = '';
+            for (var hgj_item of hgj_arr) {
+                hgj_lines += '🍎 ' + hgj_item + '\n';
+            }
+            hgj_out.textContent = hgj_lines.trim();
+        }
+    </script>
+</body>
+</html>
