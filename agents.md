@@ -10,4 +10,5 @@
 ==== 时间:yyyy-mm-dd-hh-mm | 模型名称:xxx | 提示词内容:xxx
 时间严格使用 yyyy-mm-dd-hh-mm 格式。
 8. 新建HTML页面必须添加超链接指向首页 index.html。
-9. HTML页面CSS必须使用px、rem、em、vw、%多种长度单位，并且实现CSS3 3D动画，使用 perspective、transform-style:preserve-3d、rotateX、rotateY。
+9. 每次新建或删除页面后，必须同步更新首页 index.html 的导航入口，保证首页可以进入项目中的全部页面。
+10. HTML页面CSS必须使用px、rem、em、vw、%多种长度单位，并且实现CSS3 3D动画，使用 perspective、transform-style:preserve-3d、rotateX、rotateY。
