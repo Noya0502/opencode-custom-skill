@@ -12,260 +12,592 @@
         }
 
         body {
-            font-family: "Microsoft YaHei", Arial, sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+            background: #0a0a1a;
+            min-height: 100vh;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+
+        /* ====== Canvas 粒子背景 ====== */
+        #hgj_canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* 渐变光晕层 */
+        .hgj_glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.35;
+            pointer-events: none;
+            z-index: -2;
+        }
+        .hgj_glow-1 { width: 600px; height: 600px; background: #6366f1; top: -200px; left: -200px; }
+        .hgj_glow-2 { width: 500px; height: 500px; background: #ec4899; bottom: -150px; right: -150px; }
+        .hgj_glow-3 { width: 400px; height: 400px; background: #06b6d4; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.2; }
+
+        /* ====== 顶部导航 ====== */
+        .hgj_navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            background: rgba(10, 10, 26, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.3s ease;
+        }
+
+        .hgj_nav-logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #818cf8, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hgj_nav-links {
+            display: flex;
+            gap: 1.5rem;
+            list-style: none;
+        }
+
+        .hgj_nav-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+            padding: 0.3em 0;
+        }
+
+        .hgj_nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #818cf8, #f472b6);
+            transition: width 0.3s ease;
+        }
+
+        .hgj_nav-links a:hover { color: #f1f5f9; }
+        .hgj_nav-links a:hover::after { width: 100%; }
+
+        /* ====== Hero 区 ====== */
+        .hgj_hero {
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
-        }
-
-        .hgj_scene {
-            perspective: 800px;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-
-        .hgj_card-container {
-            transform-style: preserve-3d;
-            animation: hgj_float 4s ease-in-out infinite;
-        }
-
-        .hgj_card {
-            width: 320px;
-            min-height: 610px;
-            height: auto;
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            border-radius: 1.5rem;
-            backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 2.5rem;
-            box-shadow:
-                0 25px 50px rgba(0, 0, 0, 0.4),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            transform-style: preserve-3d;
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-
-        .hgj_card:hover {
-            transform: rotateX(8deg) rotateY(-12deg) translateZ(30px);
-            box-shadow:
-                0 40px 80px rgba(99, 102, 241, 0.35),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        }
-
-        .hgj_icon {
-            width: 96px;
-            height: 96px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1, #a855f7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-            font-size: 3rem;
-            transform: translateZ(50px);
-            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5);
-            animation: hgj_pulse 2s ease-in-out infinite;
-        }
-
-        .hgj_title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: #f1f5f9;
-            margin-bottom: 0.75rem;
-            letter-spacing: 0.05em;
-            transform: translateZ(40px);
-        }
-
-        .hgj_desc {
-            font-size: 1rem;
-            line-height: 1.7em;
-            color: #94a3b8;
             text-align: center;
-            margin-bottom: 2rem;
-            transform: translateZ(30px);
+            padding: 6rem 1.5rem 3rem;
+            perspective: 1000px;
         }
 
-        .hgj_btn {
+        .hgj_hero-badge {
             display: inline-block;
-            padding: 0.875em 2.5em;
+            padding: 0.4em 1.2em;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #c7d2fe;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            border-radius: 2em;
+            margin-bottom: 1.5rem;
+            animation: hgj_badge-in 0.8s ease-out;
+        }
+
+        @keyframes hgj_badge-in {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .hgj_hero-title {
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            transform-style: preserve-3d;
+            animation: hgj_title-in 1s ease-out 0.2s both;
+        }
+
+        @keyframes hgj_title-in {
+            from { opacity: 0; transform: translateZ(-50px) scale(0.9); }
+            to   { opacity: 1; transform: translateZ(0) scale(1); }
+        }
+
+        .hgj_hero-title .hgj_gradient-text {
+            background: linear-gradient(135deg, #818cf8, #f472b6, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% 200%;
+            animation: hgj_gradient-shift 6s ease infinite;
+        }
+
+        @keyframes hgj_gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50%      { background-position: 100% 50%; }
+        }
+
+        .hgj_hero-desc {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            line-height: 1.8em;
+            color: #94a3b8;
+            max-width: 600px;
+            margin-bottom: 2.5rem;
+            animation: hgj_fade-in 1s ease-out 0.4s both;
+        }
+
+        @keyframes hgj_fade-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .hgj_hero-cta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            animation: hgj_fade-in 1s ease-out 0.6s both;
+        }
+
+        .hgj_cta-btn {
+            padding: 0.9em 2.2em;
             font-size: 1rem;
             font-weight: 600;
-            color: #ffffff;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border: none;
-            border-radius: 2em;
-            cursor: pointer;
             text-decoration: none;
-            letter-spacing: 0.05em;
-            transform: translateZ(35px);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-radius: 2.5em;
+            transition: all 0.3s ease;
+            letter-spacing: 0.03em;
+            cursor: pointer;
+            border: none;
+        }
+
+        .hgj_cta-primary {
+            color: #fff;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
         }
 
-        .hgj_btn:hover {
-            transform: translateZ(45px) scale(1.05);
+        .hgj_cta-primary:hover {
+            transform: translateY(-3px);
             box-shadow: 0 12px 35px rgba(99, 102, 241, 0.6);
         }
 
-        .hgj_btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.75rem;
-            width: 100%;
-            transform: translateZ(35px);
+        .hgj_cta-secondary {
+            color: #c7d2fe;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(129, 140, 248, 0.35);
         }
 
-        .hgj_btn-group .hgj_btn {
-            padding: 0.7em 1.4em;
-            font-size: 0.92rem;
+        .hgj_cta-secondary:hover {
+            background: rgba(129, 140, 248, 0.15);
+            transform: translateY(-3px);
         }
 
-        .hgj_nav {
-            position: absolute;
-            top: 2rem;
-            right: 3rem;
-            transform: translateZ(20px);
+        .hgj_hero-scroll {
+            margin-top: 3rem;
+            color: #64748b;
+            font-size: 0.85rem;
+            animation: hgj_bounce 2s ease-in-out infinite;
         }
 
-        .hgj_nav a {
-            color: #a5b4fc;
-            text-decoration: none;
-            font-size: 1.1rem;
-            padding: 0.6em 1.5em;
-            border: 1px solid rgba(165, 180, 252, 0.3);
-            border-radius: 2em;
-            transition: background 0.3s ease, color 0.3s ease;
+        @keyframes hgj_bounce {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(8px); }
         }
 
-        .hgj_nav a:hover {
-            background: rgba(165, 180, 252, 0.15);
-            color: #ffffff;
+        /* ====== 页面卡片区 ====== */
+        .hgj_sections {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 1.5rem 6rem;
         }
 
-        .hgj_particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            transform: translateZ(-100px);
+        .hgj_section-title {
+            text-align: center;
+            font-size: clamp(1.5rem, 4vw, 2.2rem);
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .hgj_section-subtitle {
+            text-align: center;
+            color: #64748b;
+            margin-bottom: 3rem;
+            font-size: 0.95rem;
+        }
+
+        .hgj_cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            transform-style: preserve-3d;
+        }
+
+        .hgj_page-card {
+            position: relative;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 1rem;
+            padding: 2rem 1.75rem;
+            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1),
+                        box-shadow 0.4s ease,
+                        border-color 0.3s ease;
             overflow: hidden;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .hgj_page-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 1rem;
+            padding: 1px;
+            background: linear-gradient(135deg, transparent, rgba(129, 140, 248, 0.4), transparent);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
             pointer-events: none;
         }
 
-        .hgj_particle {
+        .hgj_page-card:hover {
+            transform: translateY(-8px) rotateX(4deg) rotateY(-4deg);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5),
+                        0 0 40px rgba(129, 140, 248, 0.15);
+            border-color: rgba(129, 140, 248, 0.4);
+        }
+
+        .hgj_page-card:hover::before { opacity: 1; }
+
+        .hgj_page-card.hgj_card-1:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(244,114,182,0.2); }
+        .hgj_page-card.hgj_card-2:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(34,211,238,0.2); }
+        .hgj_page-card.hgj_card-3:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(168,85,247,0.2); }
+        .hgj_page-card.hgj_card-4:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(251,191,36,0.2); }
+        .hgj_page-card.hgj_card-5:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(52,211,153,0.2); }
+        .hgj_page-card.hgj_card-6:hover  { box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 40px rgba(244,114,182,0.2); }
+
+        .hgj_card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin-bottom: 1.25rem;
+            transform: translateZ(30px);
+        }
+
+        .hgj_card-1 .hgj_card-icon { background: linear-gradient(135deg, rgba(244,114,182,0.25), rgba(251,191,36,0.15)); }
+        .hgj_card-2 .hgj_card-icon { background: linear-gradient(135deg, rgba(34,211,238,0.25), rgba(99,102,241,0.15)); }
+        .hgj_card-3 .hgj_card-icon { background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(236,72,153,0.15)); }
+        .hgj_card-4 .hgj_card-icon { background: linear-gradient(135deg, rgba(251,191,36,0.25), rgba(244,114,182,0.15)); }
+        .hgj_card-5 .hgj_card-icon { background: linear-gradient(135deg, rgba(52,211,153,0.25), rgba(6,182,212,0.15)); }
+        .hgj_card-6 .hgj_card-icon { background: linear-gradient(135deg, rgba(244,114,182,0.25), rgba(168,85,247,0.15)); }
+
+        .hgj_card-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            transform: translateZ(20px);
+        }
+
+        .hgj_card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 0.75rem;
+            transform: translateZ(25px);
+        }
+
+        .hgj_card-desc {
+            font-size: 0.88rem;
+            line-height: 1.65em;
+            color: #94a3b8;
+            transform: translateZ(15px);
+        }
+
+        .hgj_card-arrow {
             position: absolute;
-            width: 6px;
-            height: 6px;
-            background: rgba(165, 180, 252, 0.6);
-            border-radius: 50%;
-            animation: hgj_rise linear infinite;
+            right: 1.5rem;
+            bottom: 1.5rem;
+            font-size: 1.2rem;
+            color: #64748b;
+            transition: all 0.3s ease;
+            transform: translateZ(35px);
         }
 
-        .hgj_particle:nth-child(1) { left: 10%; animation-duration: 8s; animation-delay: 0s; }
-        .hgj_particle:nth-child(2) { left: 25%; animation-duration: 10s; animation-delay: 1s; }
-        .hgj_particle:nth-child(3) { left: 40%; animation-duration: 7s; animation-delay: 2s; }
-        .hgj_particle:nth-child(4) { left: 55%; animation-duration: 9s; animation-delay: 0.5s; }
-        .hgj_particle:nth-child(5) { left: 70%; animation-duration: 11s; animation-delay: 1.5s; }
-        .hgj_particle:nth-child(6) { left: 85%; animation-duration: 8.5s; animation-delay: 3s; }
-
-        @keyframes hgj_float {
-            0%, 100% { transform: rotateX(5deg) rotateY(-5deg) translateY(0px); }
-            50% { transform: rotateX(-3deg) rotateY(5deg) translateY(-15px); }
+        .hgj_page-card:hover .hgj_card-arrow {
+            color: #c7d2fe;
+            transform: translateZ(35px) translateX(6px);
         }
 
-        @keyframes hgj_pulse {
-            0%, 100% { transform: translateZ(50px) scale(1); }
-            50% { transform: translateZ(50px) scale(1.08); }
+        /* 卡片进入动画 */
+        .hgj_page-card { opacity: 0; animation: hgj_card-in 0.6s ease-out forwards; }
+        .hgj_card-1 { animation-delay: 0.05s; }
+        .hgj_card-2 { animation-delay: 0.1s; }
+        .hgj_card-3 { animation-delay: 0.15s; }
+        .hgj_card-4 { animation-delay: 0.2s; }
+        .hgj_card-5 { animation-delay: 0.25s; }
+        .hgj_card-6 { animation-delay: 0.3s; }
+
+        @keyframes hgj_card-in {
+            from { opacity: 0; transform: translateY(30px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes hgj_rise {
-            0% { transform: translateY(100vh) rotateX(0deg); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { transform: translateY(-10vh) rotateX(360deg); opacity: 0; }
+        /* ====== 页脚 ====== */
+        .hgj_footer {
+            text-align: center;
+            padding: 2rem;
+            color: #475569;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
+        /* ====== 响应式 ====== */
         @media (max-width: 768px) {
-            .hgj_card {
-                width: 85vw;
-                height: auto;
-                min-height: 630px;
-            }
+            .hgj_navbar { padding: 0.75rem 1rem; }
+            .hgj_nav-links { gap: 1rem; }
+            .hgj_nav-links a { font-size: 0.82rem; }
+            .hgj_sections { padding: 3rem 1rem 4rem; }
+            .hgj_hero { padding: 5rem 1rem 2rem; }
         }
     </style>
 </head>
 <body>
     <!-- 姓名：胡国静，日期：首页 -->
-    <div class="hgj_scene">
-        <div class="hgj_particles">
-            <div class="hgj_particle"></div>
-            <div class="hgj_particle"></div>
-            <div class="hgj_particle"></div>
-            <div class="hgj_particle"></div>
-            <div class="hgj_particle"></div>
-            <div class="hgj_particle"></div>
+
+    <canvas id="hgj_canvas"></canvas>
+    <div class="hgj_glow hgj_glow-1"></div>
+    <div class="hgj_glow hgj_glow-2"></div>
+    <div class="hgj_glow hgj_glow-3"></div>
+
+    <!-- 顶部导航 -->
+    <nav class="hgj_navbar">
+        <div class="hgj_nav-logo">HGJ · 项目</div>
+        <ul class="hgj_nav-links">
+            <li><a href="#hgj_hero">首页</a></li>
+            <li><a href="#hgj_pages">页面</a></li>
+            <li><a href="https://github.com/Noya0502/opencode-custom-skill" target="_blank">GitHub</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero 区 -->
+    <section class="hgj_hero" id="hgj_hero">
+        <span class="hgj_hero-badge">✦ 纯原生 HTML · CSS · JavaScript</span>
+        <h1 class="hgj_hero-title">
+            <span class="hgj_gradient-text">前端练习场</span><br>
+            Hu406 静态站点
+        </h1>
+        <p class="hgj_hero-desc">
+            6 个独立页面，涵盖 CSS3 3D 动画、CSS 变量、JavaScript 数据类型、
+            条件循环与小游戏，鼠标移动即可感受 3D 视差交互。
+        </p>
+        <div class="hgj_hero-cta">
+            <a href="#hgj_pages" class="hgj_cta-btn hgj_cta-primary">浏览页面 →</a>
+            <a href="page2.html" class="hgj_cta-btn hgj_cta-secondary">CSS 3D 展示</a>
         </div>
-        <nav class="hgj_nav">
-            <a href="page2.html">第二页 →</a>
-        </nav>
-        <div class="hgj_card-container">
-            <div class="hgj_card" id="hgj_mainCard">
-                <div class="hgj_icon">🚀</div>
-                <h1 class="hgj_title">Hu406 项目</h1>
-                <p class="hgj_desc">
-                    欢迎来到 Hu406 静态站点。<br>
-                    本页面展示了 CSS3 3D 动画效果，<br>
-                    包括透视、3D 变换与悬浮交互。
-                </p>
-                <div class="hgj_btn-group">
-                    <a href="page2.html" class="hgj_btn" id="hgj_navBtn">进入第二页</a>
-                    <a href="11-1.html" class="hgj_btn" id="hgj_navBtn11">11-1 3D动画</a>
-                    <a href="12-1.html" class="hgj_btn" id="hgj_navBtn12">12-1 CSS变量</a>
-                    <a href="14-2.html" class="hgj_btn" id="hgj_navBtn14">14-2 数据类型</a>
-                    <a href="15-1.html" class="hgj_btn" id="hgj_navBtn15">15-1 数九游戏</a>
-                    <a href="15-2.html" class="hgj_btn" id="hgj_navBtn15b">15-2 条件循环</a>
-                </div>
-            </div>
+        <div class="hgj_hero-scroll">↓ 向下滚动探索</div>
+    </section>
+
+    <!-- 页面卡片 -->
+    <section class="hgj_sections" id="hgj_pages">
+        <h2 class="hgj_section-title">六个练习页面</h2>
+        <p class="hgj_section-subtitle">点击任意卡片进入对应演示</p>
+        <div class="hgj_cards-grid">
+            <a href="page2.html" class="hgj_page-card hgj_card-1">
+                <div class="hgj_card-icon">🎴</div>
+                <div class="hgj_card-label">PAGE 2</div>
+                <div class="hgj_card-title">CSS3 特性展示</div>
+                <div class="hgj_card-desc">3D 透视、变换、动画与交互，纯 CSS 实现的立体效果合集</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
+            <a href="11-1.html" class="hgj_page-card hgj_card-2">
+                <div class="hgj_card-icon">🎬</div>
+                <div class="hgj_card-label">11-1</div>
+                <div class="hgj_card-title">CSS3 3D 动画</div>
+                <div class="hgj_card-desc">立体卡片翻转、旋转立方体、景深透视，沉浸式 3D 动画演示</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
+            <a href="12-1.html" class="hgj_page-card hgj_card-3">
+                <div class="hgj_card-icon">🎨</div>
+                <div class="hgj_card-label">12-1</div>
+                <div class="hgj_card-title">CSS 变量</div>
+                <div class="hgj_card-desc">CSS 自定义属性的声明、继承与 JS 动态读写，含胡国静署名</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
+            <a href="14-2.html" class="hgj_page-card hgj_card-4">
+                <div class="hgj_card-icon">📊</div>
+                <div class="hgj_card-label">14-2</div>
+                <div class="hgj_card-title">JS 六种数据类型</div>
+                <div class="hgj_card-desc">字符串、数字、布尔、未定义、空、Symbol，翻转卡片交互式讲解</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
+            <a href="15-1.html" class="hgj_page-card hgj_card-5">
+                <div class="hgj_card-icon">🎮</div>
+                <div class="hgj_card-label">15-1</div>
+                <div class="hgj_card-title">数九游戏 · 逢九过</div>
+                <div class="hgj_card-desc">100 宫格按逢九规则显示，9 的倍数与含 9 的数字置空，统计面板</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
+            <a href="15-2.html" class="hgj_page-card hgj_card-6">
+                <div class="hgj_card-icon">🔄</div>
+                <div class="hgj_card-label">15-2</div>
+                <div class="hgj_card-title">条件与循环</div>
+                <div class="hgj_card-desc">if-else、switch、for、while、do-while、for-in/for-of 交互式演示</div>
+                <span class="hgj_card-arrow">→</span>
+            </a>
         </div>
-    </div>
+    </section>
+
+    <footer class="hgj_footer">
+        © 2026 Hu406 · 胡国静 · 原生 HTML/CSS/JavaScript 实现
+    </footer>
 
     <script>
         (function() {
-            var hgj_card = document.getElementById('hgj_mainCard');
-            var hgj_targetX = 0;
-            var hgj_targetY = 0;
-            var hgj_currentX = 0;
-            var hgj_currentY = 0;
+            // ====== Canvas 粒子背景 ======
+            var hgj_canvas = document.getElementById('hgj_canvas');
+            var hgj_ctx = hgj_canvas.getContext('2d');
+            var hgj_particles = [];
+            var hgj_mouse = { x: -9999, y: -9999 };
 
-            document.addEventListener('mousemove', function(hgj_event) {
-                var hgj_centerX = window.innerWidth / 2;
-                var hgj_centerY = window.innerHeight / 2;
-                hgj_targetX = (hgj_event.clientX - hgj_centerX) / hgj_centerX * -10;
-                hgj_targetY = (hgj_event.clientY - hgj_centerY) / hgj_centerY * 10;
+            function hgj_resize() {
+                hgj_canvas.width = window.innerWidth;
+                hgj_canvas.height = window.innerHeight;
+            }
+            hgj_resize();
+            window.addEventListener('resize', hgj_resize);
+
+            document.addEventListener('mousemove', function(e) {
+                hgj_mouse.x = e.clientX;
+                hgj_mouse.y = e.clientY;
             });
 
-            function hgj_animate() {
-                hgj_currentX += (hgj_targetX - hgj_currentX) * 0.08;
-                hgj_currentY += (hgj_targetY - hgj_currentY) * 0.08;
-                hgj_card.style.transform = 'rotateX(' + hgj_currentY + 'deg) rotateY(' + hgj_currentX + 'deg) translateZ(20px)';
-                requestAnimationFrame(hgj_animate);
+            var hgj_colors = ['#6366f1', '#8b5cf6', '#ec4899', '#06b6d4', '#fbbf24'];
+            var hgj_count = Math.min(120, Math.floor(window.innerWidth * window.innerHeight / 12000));
+
+            for (var i = 0; i < hgj_count; i++) {
+                hgj_particles.push({
+                    x: Math.random() * hgj_canvas.width,
+                    y: Math.random() * hgj_canvas.height,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4,
+                    r: Math.random() * 2 + 0.5,
+                    color: hgj_colors[Math.floor(Math.random() * hgj_colors.length)],
+                    alpha: Math.random() * 0.5 + 0.2
+                });
             }
-            hgj_animate();
+
+            function hgj_draw() {
+                hgj_ctx.clearRect(0, 0, hgj_canvas.width, hgj_canvas.height);
+
+                for (var i = 0; i < hgj_particles.length; i++) {
+                    var p = hgj_particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+
+                    // 边界反弹
+                    if (p.x < 0 || p.x > hgj_canvas.width)  p.vx *= -1;
+                    if (p.y < 0 || p.y > hgj_canvas.height) p.vy *= -1;
+
+                    // 鼠标排斥
+                    var dx = p.x - hgj_mouse.x;
+                    var dy = p.y - hgj_mouse.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        p.x += dx / dist * 1.5;
+                        p.y += dy / dist * 1.5;
+                    }
+
+                    hgj_ctx.beginPath();
+                    hgj_ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    hgj_ctx.fillStyle = p.color;
+                    hgj_ctx.globalAlpha = p.alpha;
+                    hgj_ctx.fill();
+
+                    // 连线
+                    for (var j = i + 1; j < hgj_particles.length; j++) {
+                        var p2 = hgj_particles[j];
+                        var d2x = p.x - p2.x;
+                        var d2y = p.y - p2.y;
+                        var d2 = Math.sqrt(d2x * d2x + d2y * d2y);
+                        if (d2 < 100) {
+                            hgj_ctx.beginPath();
+                            hgj_ctx.moveTo(p.x, p.y);
+                            hgj_ctx.lineTo(p2.x, p2.y);
+                            hgj_ctx.strokeStyle = p.color;
+                            hgj_ctx.globalAlpha = (1 - d2 / 100) * 0.25;
+                            hgj_ctx.lineWidth = 0.6;
+                            hgj_ctx.stroke();
+                        }
+                    }
+                }
+
+                hgj_ctx.globalAlpha = 1;
+                requestAnimationFrame(hgj_draw);
+            }
+            hgj_draw();
+
+            // ====== 卡片鼠标视差 ======
+            var hgj_cards = document.querySelectorAll('.hgj_page-card');
+            hgj_cards.forEach(function(card) {
+                card.addEventListener('mousemove', function(e) {
+                    var rect = card.getBoundingClientRect();
+                    var x = (e.clientX - rect.left) / rect.width - 0.5;
+                    var y = (e.clientY - rect.top) / rect.height - 0.5;
+                    card.style.transform =
+                        'translateY(-8px) rotateX(' + (-y * 6) + 'deg) rotateY(' + (x * 6) + 'deg)';
+                });
+                card.addEventListener('mouseleave', function() {
+                    card.style.transform = '';
+                });
+            });
+
+            // ====== 导航栏滚动效果 ======
+            var hgj_navbar = document.querySelector('.hgj_navbar');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    hgj_navbar.style.background = 'rgba(10, 10, 26, 0.85)';
+                } else {
+                    hgj_navbar.style.background = 'rgba(10, 10, 26, 0.5)';
+                }
+            });
         })();
     </script>
 </body>
