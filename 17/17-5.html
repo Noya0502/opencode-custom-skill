@@ -3,112 +3,287 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>17-5 setTimeout & setInterval</title>
+<title>17-5 setTimeout & setInterval · 可视化定时器</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#ecfeff,#e0e7ff);min-height:100vh;padding:2rem 1rem;color:#1e293b}
-.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#0f172a,#1e293b 50%,#0f172a);min-height:100vh;padding:2rem 1rem;color:#e2e8f0}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#cbd5e1;text-decoration:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:2em;backdrop-filter:blur(8px);transition:.3s;z-index:10}
 .hgj_back:hover{background:#06b6d4;color:#fff;border-color:#06b6d4;transform:translateY(-2px)}
-.hgj_wrap{max-width:860px;margin:0 auto;background:#fff;border-radius:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
-.hgj_head{padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9}
-.hgj_head h1{font-size:1.15rem}
-.hgj_head p{font-size:.8rem;color:#94a3b8;margin-top:.25rem}
-.hgj_panels{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#f1f5f9}
-@media(max-width:640px){.hgj_panels{grid-template-columns:1fr}}
-.hgj_panel{background:#fff;padding:1.25rem}
-.hgj_panel h2{font-size:.95rem;color:#334155;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
-.hgj_tag{font-size:.7rem;background:#e0e7ff;color:#4338ca;padding:.15em .55em;border-radius:2em;font-weight:600}
-.hgj_tag.interval{background:#dcfce7;color:#15803d}
-.hgj_count{font-family:Consolas,monospace;font-size:.9rem;color:#6366f1;margin-left:auto}
-.hgj_controls{display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap}
-.hgj_btn{padding:.5em 1.1em;font-size:.82rem;border:none;border-radius:.4em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
-.hgj_start{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff}
-.hgj_stop{background:#f1f5f9;color:#475569}
-.hgj_stop:hover{background:#fee2e2;color:#b91c1c}
-.hgj_btn:disabled{opacity:.5;cursor:not-allowed}
-.hgj_log{background:#0f172a;color:#a5f3fc;font-family:Consolas,"Courier New",monospace;font-size:.78rem;line-height:1.65;padding:.85rem;border-radius:.45rem;height:220px;overflow-y:auto}
-.hgj_log div{opacity:0;animation:hgj_fade .3s ease forwards}
+
+.hgj_wrap{max-width:1100px;margin:0 auto}
+.hgj_head{text-align:center;margin-bottom:2rem}
+.hgj_head h1{font-size:clamp(1.4rem,3.5vw,1.85rem);font-weight:800;background:linear-gradient(135deg,#22d3ee,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hgj_head p{font-size:.85rem;color:#94a3b8;margin-top:.4rem}
+
+/* ====== 网格 ====== */
+.hgj_grid{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.hgj_card{background:rgba(30,41,59,.6);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:1rem;overflow:hidden}
+@media(max-width:720px){.hgj_grid{grid-template-columns:1fr}}
+.hgj_card-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:.6rem}
+.hgj_card-title{font-size:.95rem;font-weight:700}
+.hgj_tag{font-size:.7rem;padding:.2em .6em;border-radius:2em;font-weight:700}
+.hgj_tag.st{background:rgba(34,211,238,.18);color:#22d3ee;border:1px solid rgba(34,211,238,.3)}
+.hgj_tag.si{background:rgba(167,139,250,.18);color:#c4b5fd;border:1px solid rgba(167,139,250,.3)}
+.hgj_card-body{padding:1.25rem}
+
+/* ====== setTimeout 圆环 ====== */
+.hgj_ring-wrap{display:flex;justify-content:center;margin-bottom:1rem;position:relative}
+.hgj_ring{width:180px;height:180px;transform:rotate(-90deg)}
+.hgj_ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:10}
+.hgj_ring-fg{fill:none;stroke:url(#hgj_grad-st);stroke-width:10;stroke-linecap:round;stroke-dasharray:565.48;stroke-dashoffset:0;transition:stroke-dashoffset .08s linear}
+.hgj_center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.hgj_center-num{font-family:Consolas,monospace;font-size:2.5rem;font-weight:800;color:#22d3ee}
+.hgj_center-unit{font-size:.7rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.15em}
+
+/* ====== setInterval 波动 ====== */
+.hgj_wave{height:100px;display:flex;align-items:flex-end;gap:4px;margin:.5rem 0 1rem;overflow:hidden}
+.hgj_wave div{flex:1;background:linear-gradient(180deg,#a78bfa,#6366f1);border-radius:4px 4px 0 0;min-height:4px;transition:height .2s cubic-bezier(.34,1.56,.64,1)}
+.hgj_counter-big{font-family:Consolas,monospace;font-size:3.2rem;font-weight:900;color:#c4b5fd;text-align:center;margin:.25rem 0;text-shadow:0 0 20px rgba(167,139,250,.35)}
+.hgj_sub{text-align:center;font-size:.78rem;color:#94a3b8;margin-bottom:.75rem}
+
+/* ====== 通用控件 ====== */
+.hgj_controls{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:.85rem}
+.hgj_input-group{display:flex;align-items:center;gap:.35rem;font-size:.82rem;color:#94a3b8}
+.hgj_input-group input{width:60px;padding:.4em .55em;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:.4em;color:#e2e8f0;font-family:Consolas,monospace;font-size:.85rem;outline:none}
+.hgj_input-group input:focus{border-color:#22d3ee}
+.hgj_btn{padding:.55em 1.1em;font-size:.82rem;border:1px solid rgba(255,255,255,.12);border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s;background:rgba(255,255,255,.06);color:#e2e8f0}
+.hgj_btn:hover:not(:disabled){background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.hgj_btn-run{background:linear-gradient(135deg,#06b6d4,#0891b2);border-color:transparent;color:#fff}
+.hgj_btn-run:hover:not(:disabled){box-shadow:0 6px 16px rgba(6,182,212,.35)}
+.hgj_btn-run-si{background:linear-gradient(135deg,#8b5cf6,#6366f1);border-color:transparent;color:#fff}
+.hgj_btn-run-si:hover:not(:disabled){box-shadow:0 6px 16px rgba(139,92,246,.35)}
+.hgj_btn-stop:hover:not(:disabled){background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#f87171}
+.hgj_btn:disabled{opacity:.45;cursor:not-allowed}
+
+/* ====== 日志 ====== */
+.hgj_log{background:#020617;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.75rem;height:160px;overflow-y:auto;font-family:Consolas,"Courier New",monospace;font-size:.75rem;line-height:1.75}
+.hgj_log div{opacity:0;animation:hgj_fade .25s ease forwards}
 @keyframes hgj_fade{to{opacity:1}}
-.hgj_tstamp{color:#94a3b8}
-.hgj_type-timeout{color:#fbbf24}
-.hgj_type-interval{color:#34d399}
-.hgj_cleared{color:#fca5a5}
-.hgj_counter{font-family:Consolas,monospace;font-size:.9rem;color:#64748b;margin-bottom:.5rem}
-.hgj_counter b{color:#06b6d4;font-size:1.1rem}
+.hgj_log .hgj_t{color:#64748b}
+.hgj_log .hgj_st-ok{color:#22d3ee}
+.hgj_log .hgj_st-run{color:#fbbf24}
+.hgj_log .hgj_si-ok{color:#c4b5fd}
+.hgj_log .hgj_clear{color:#f87171}
+.hgj_log .hgj_info{color:#a5f3fc}
+
+/* ====== 漂移统计 ====== */
+.hgj_stats{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.75rem}
+.hgj_stat{background:rgba(255,255,255,.03);border-radius:.45rem;padding:.55rem .75rem;font-size:.78rem}
+.hgj_stat b{display:block;font-size:1.05rem;font-family:Consolas,monospace;color:#22d3ee;margin-top:.15rem}
+.hgj_stat.si b{color:#c4b5fd}
+.hgj_stat small{color:#64748b}
+
+/* ====== 漂移挑战 ====== */
+.hgj_challenge{margin-top:1.25rem;background:linear-gradient(135deg,rgba(251,191,36,.1),rgba(245,158,11,.08));border:1px solid rgba(251,191,36,.25);border-radius:.75rem;padding:1rem 1.25rem}
+.hgj_challenge h3{font-size:.9rem;color:#fbbf24;margin-bottom:.4rem;display:flex;align-items:center;gap:.4rem}
+.hgj_challenge p{font-size:.82rem;color:#cbd5e1;line-height:1.6;margin-bottom:.75rem}
+.hgj_fix-box{background:#020617;border:1px solid rgba(251,191,36,.25);border-radius:.5rem;padding:.85rem;font-family:Consolas,"Courier New",monospace;font-size:.73rem;line-height:1.8;color:#fde68a;white-space:pre-wrap}
 </style>
 </head>
 <body>
-<!-- 姓名：胡国静，日期：17-5 setTimeout & setInterval 定时器 -->
+<!-- 姓名：胡国静，日期：17-5 setTimeout & setInterval 可视化定时器 -->
 <a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<!-- SVG 渐变定义 -->
+<svg width="0" height="0" style="position:absolute">
+    <defs>
+        <linearGradient id="hgj_grad-st" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#22d3ee"/>
+            <stop offset="100%" stop-color="#6366f1"/>
+        </linearGradient>
+        <linearGradient id="hgj_grad-si" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#a78bfa"/>
+            <stop offset="100%" stop-color="#ec4899"/>
+        </linearGradient>
+    </defs>
+</svg>
+
 <div class="hgj_wrap">
     <div class="hgj_head">
-        <h1>17-5 两种定时器演示</h1>
-        <p>setTimeout（一次性延时） vs setInterval（循环定时器），附停止按钮</p>
+        <h1>⏱ setTimeout &amp; setInterval 可视化</h1>
+        <p>倒计时圆环 · 波动柱状图 · 漂移统计 · 定时漂移问题修复方案</p>
     </div>
-    <div class="hgj_panels">
-        <!-- setTimeout -->
-        <div class="hgj_panel">
-            <h2><span class="hgj_tag">setTimeout</span> 一次性 3 秒后执行 <span class="hgj_count" id="hgj_stCount">已执行 0 次</span></h2>
-            <div class="hgj_controls">
-                <button class="hgj_btn hgj_start" id="hgj_stStart">▶ 启动（3 秒后打印一次）</button>
-                <button class="hgj_btn hgj_stop"  id="hgj_stStop">■ 取消</button>
+
+    <div class="hgj_grid">
+        <!-- ============ setTimeout ============ -->
+        <div class="hgj_card">
+            <div class="hgj_card-head">
+                <span class="hgj_tag st">setTimeout</span>
+                <span class="hgj_card-title">一次性延时 · 倒计时圆环</span>
             </div>
-            <div class="hgj_log" id="hgj_stLog"></div>
-        </div>
-        <!-- setInterval -->
-        <div class="hgj_panel">
-            <h2><span class="hgj_tag interval">setInterval</span> 每 1 秒打印 <span class="hgj_count" id="hgj_siCount">已执行 0 次</span></h2>
-            <div class="hgj_controls">
-                <button class="hgj_btn hgj_start" id="hgj_siStart">▶ 启动</button>
-                <button class="hgj_btn hgj_stop"  id="hgj_siStop">■ 停止</button>
+            <div class="hgj_card-body">
+                <div class="hgj_ring-wrap">
+                    <svg class="hgj_ring" viewBox="0 0 190 190">
+                        <circle class="hgj_ring-bg" cx="95" cy="95" r="90"></circle>
+                        <circle class="hgj_ring-fg" id="hgj_stRing" cx="95" cy="95" r="90"></circle>
+                    </svg>
+                    <div class="hgj_center">
+                        <div class="hgj_center-num" id="hgj_stNum">3.0</div>
+                        <div class="hgj_center-unit">seconds</div>
+                    </div>
+                </div>
+
+                <div class="hgj_controls">
+                    <span class="hgj_input-group">时长 <input type="number" id="hgj_stSec" value="3" min="1" max="30">s</span>
+                    <button class="hgj_btn hgj_btn-run" id="hgj_stRun">▶ 启动</button>
+                    <button class="hgj_btn hgj_btn-stop" id="hgj_stStop">■ 取消</button>
+                </div>
+
+                <div class="hgj_log" id="hgj_stLog">
+                    <div class="hgj_info">💡 setTimeout(callback, delay) — 等待 delay 毫秒后执行一次 callback</div>
+                    <div class="hgj_info">💡 适合：弹窗提醒、一次性动画延迟、超时兜底</div>
+                </div>
+
+                <div class="hgj_stats">
+                    <div class="hgj_stat"><small>触发次数</small><b id="hgj_stCount">0</b></div>
+                    <div class="hgj_stat"><small>上次执行耗时</small><b id="hgj_stDrift">—</b></div>
+                </div>
             </div>
-            <div class="hgj_log" id="hgj_siLog"></div>
         </div>
+
+        <!-- ============ setInterval ============ -->
+        <div class="hgj_card">
+            <div class="hgj_card-head">
+                <span class="hgj_tag si">setInterval</span>
+                <span class="hgj_card-title">循环定时器 · 波动柱状图</span>
+            </div>
+            <div class="hgj_card-body">
+                <div class="hgj_counter-big" id="hgj_siCount">0</div>
+                <div class="hgj_sub">已触发 tick 次数（每根柱子 = 一次 tick）</div>
+                <div class="hgj_wave" id="hgj_wave"></div>
+
+                <div class="hgj_controls">
+                    <span class="hgj_input-group">间隔 <input type="number" id="hgj_siMs" value="1000" min="100" max="10000" step="100">ms</span>
+                    <button class="hgj_btn hgj_btn-run-si" id="hgj_siRun">▶ 启动</button>
+                    <button class="hgj_btn hgj_btn-stop" id="hgj_siStop">■ 停止</button>
+                </div>
+
+                <div class="hgj_log" id="hgj_siLog">
+                    <div class="hgj_info">💡 setInterval(callback, delay) — 每隔 delay 毫秒执行一次</div>
+                    <div class="hgj_info">⚠️ 浏览器后台/标签页非激活时 delay 会被强制拉长（节流节能）</div>
+                </div>
+
+                <div class="hgj_stats">
+                    <div class="hgj_stat si"><small>累计耗时</small><b id="hgj_siElapsed">0.0s</b></div>
+                    <div class="hgj_stat si"><small>平均漂移</small><b id="hgj_siDrift">—</b></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============ 定时漂移挑战 ============ -->
+    <div class="hgj_challenge">
+        <h3>⚠️ setInterval 漂移问题 &amp; 正确姿势</h3>
+        <p>你可能已经发现：setInterval 并不是精准的「每隔 N 毫秒」。主线程卡顿、浏览器后台节流都会让它越跑越飘。
+        <br>✅ <b>正确做法</b>：用 setTimeout 递归 + 记录首次时间戳，按「真实经过时间」计算下一次延时，抵消漂移。</p>
+        <div class="hgj_fix-box">// 漂移修复方案：基准时间戳 + setTimeout 递归
+let hgj_base = Date.now();
+function hgj_fixedInterval() {
+    const drift = Date.now() - hgj_base;
+    console.log('实际漂移：' + drift + 'ms');
+    // 下一次触发 = 理想时间 - 当前漂移
+    const nextDelay = 1000 - drift % 1000;
+    hgj_timerId = setTimeout(hgj_fixedInterval, nextDelay);
+}</div>
     </div>
 </div>
+
 <script>
 (function(){
+    // ======= 通用日志 =======
     function hgj_ts(){ return new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
-    function hgj_append(el,cls,text){
+    function hgj_log(el,cls,text){
         const d=document.createElement('div');
-        d.innerHTML='<span class="hgj_tstamp">['+hgj_ts()+']</span> <span class="'+cls+'">'+text+'</span>';
+        d.innerHTML='<span class="hgj_t">['+hgj_ts()+']</span> <span class="'+cls+'">'+text+'</span>';
         el.appendChild(d);
         el.scrollTop=el.scrollHeight;
     }
 
-    // === setTimeout ===
-    const stLog=document.getElementById('hgj_stLog');
-    const stCount=document.getElementById('hgj_stCount');
-    let stTimer=null,stN=0;
-    document.getElementById('hgj_stStart').onclick=()=>{
-        if(stTimer) return;
-        hgj_append(stLog,'hgj_type-timeout','⏳ setTimeout 设置，3 秒后执行...');
-        stTimer=setTimeout(()=>{
-            stTimer=null;
-            stN++;
-            stCount.textContent='已执行 '+stN+' 次';
-            hgj_append(stLog,'hgj_type-timeout','✅ setTimeout 触发！任务 #'+stN);
-        },3000);
+    // ======= setTimeout 圆环 =======
+    const hgj_stRing=document.getElementById('hgj_stRing');
+    const hgj_stNum=document.getElementById('hgj_stNum');
+    const hgj_stLog=document.getElementById('hgj_stLog');
+    const hgj_stCount=document.getElementById('hgj_stCount');
+    const hgj_stDrift=document.getElementById('hgj_stDrift');
+    let hgj_stTimer=null, hgj_stCountNum=0, hgj_stAnim=null, hgj_stStartTime=null, hgj_stTotalMs=3000;
+
+    document.getElementById('hgj_stRun').onclick=()=>{
+        if(hgj_stTimer) return;
+        hgj_stTotalMs = Math.max(500,(+document.getElementById('hgj_stSec').value||3)*1000);
+        const circumference=2*Math.PI*90;
+        hgj_stRing.style.strokeDasharray=circumference;
+        hgj_stRing.style.strokeDashoffset=circumference;
+        hgj_stStartTime=Date.now();
+        hgj_stNum.textContent=(hgj_stTotalMs/1000).toFixed(1);
+        hgj_log(hgj_stLog,'hgj_st-run','⏳ setTimeout 设置 '+hgj_stTotalMs+'ms 后执行...');
+
+        // 圆环动画
+        const animate=()=>{
+            const elapsed=Date.now()-hgj_stStartTime;
+            const pct=Math.min(elapsed/hgj_stTotalMs,1);
+            hgj_stRing.style.strokeDashoffset=circumference*(1-pct);
+            hgj_stNum.textContent=Math.max(0,(hgj_stTotalMs-elapsed)/1000).toFixed(1);
+            if(pct<1) hgj_stAnim=requestAnimationFrame(animate);
+        };
+        hgj_stAnim=requestAnimationFrame(animate);
+
+        hgj_stTimer=setTimeout(()=>{
+            const drift=Date.now()-hgj_stStartTime-hgj_stTotalMs;
+            hgj_stTimer=null;
+            hgj_stCountNum++;
+            hgj_stCount.textContent=hgj_stCountNum;
+            hgj_stDrift.textContent=drift.toFixed(0)+' ms';
+            hgj_log(hgj_stLog,'hgj_st-ok','✅ setTimeout 触发！#'+hgj_stCountNum+'（实际漂移 '+drift+'ms）');
+        },hgj_stTotalMs);
     };
     document.getElementById('hgj_stStop').onclick=()=>{
-        if(stTimer){ clearTimeout(stTimer); stTimer=null; hgj_append(stLog,'hgj_cleared','🛑 clearTimeout 已取消'); }
+        if(hgj_stTimer){
+            clearTimeout(hgj_stTimer); hgj_stTimer=null;
+            cancelAnimationFrame(hgj_stAnim);
+            hgj_log(hgj_stLog,'hgj_clear','🛑 clearTimeout 已取消');
+            hgj_stNum.textContent=(hgj_stTotalMs/1000).toFixed(1);
+            hgj_stRing.style.strokeDashoffset=2*Math.PI*90;
+        }
     };
 
-    // === setInterval ===
-    const siLog=document.getElementById('hgj_siLog');
-    const siCount=document.getElementById('hgj_siCount');
-    let siTimer=null,siN=0;
-    document.getElementById('hgj_siStart').onclick=()=>{
-        if(siTimer) return;
-        hgj_append(siLog,'hgj_type-interval','▶ setInterval 启动（每 1 秒一次）');
-        siTimer=setInterval(()=>{
-            siN++;
-            siCount.textContent='已执行 '+siN+' 次';
-            hgj_append(siLog,'hgj_type-interval','🔁 第 '+siN+' 次 tick');
-        },1000);
+    // ======= setInterval 波动图 =======
+    const hgj_wave=document.getElementById('hgj_wave');
+    const hgj_siLog=document.getElementById('hgj_siLog');
+    const hgj_siCount=document.getElementById('hgj_siCount');
+    const hgj_siElapsed=document.getElementById('hgj_siElapsed');
+    const hgj_siDrift=document.getElementById('hgj_siDrift');
+    let hgj_siTimer=null, hgj_siN=0, hgj_siStart=null, hgj_siIntervalMs=1000;
+    let hgj_siTotalDrift=0;
+
+    document.getElementById('hgj_siRun').onclick=()=>{
+        if(hgj_siTimer) return;
+        hgj_siIntervalMs=Math.max(100,+document.getElementById('hgj_siMs').value||1000);
+        hgj_siStart=Date.now();
+        hgj_log(hgj_siLog,'hgj_info','▶ setInterval 启动，间隔 '+hgj_siIntervalMs+'ms');
+        hgj_siTimer=setInterval(()=>{
+            hgj_siN++;
+            hgj_siCount.textContent=hgj_siN;
+            // 波动柱子（随机高度制造波形）
+            const bar=document.createElement('div');
+            const h=10+Math.random()*90;
+            bar.style.height=h+'%';
+            hgj_wave.appendChild(bar);
+            while(hgj_wave.children.length>30) hgj_wave.removeChild(hgj_wave.firstChild);
+
+            // 漂移统计
+            const expected = hgj_siIntervalMs*hgj_siN;
+            const actual   = Date.now()-hgj_siStart;
+            const drift    = actual-expected;
+            hgj_siTotalDrift += Math.abs(drift);
+            hgj_siElapsed.textContent=(actual/1000).toFixed(1)+'s';
+            hgj_siDrift.textContent=(hgj_siTotalDrift/hgj_siN).toFixed(0)+'ms';
+        },hgj_siIntervalMs);
     };
     document.getElementById('hgj_siStop').onclick=()=>{
-        if(siTimer){ clearInterval(siTimer); siTimer=null; hgj_append(siLog,'hgj_cleared','🛑 clearInterval 已停止'); }
+        if(hgj_siTimer){
+            clearInterval(hgj_siTimer); hgj_siTimer=null;
+            hgj_log(hgj_siLog,'hgj_clear','🛑 clearInterval 已停止（共 '+hgj_siN+' 次 tick）');
+        }
     };
 })();
 </script>
