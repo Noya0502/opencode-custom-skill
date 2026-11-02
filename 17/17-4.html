@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-4 GET / POST 接口测试</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#f8fafc;min-height:100vh;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#3b82f6;color:#fff;border-color:#3b82f6;transform:translateY(-2px)}
+.hgj_wrap{max-width:900px;margin:0 auto;background:#fff;border-radius:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
+.hgj_head{padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9}
+.hgj_head h1{font-size:1.15rem}
+.hgj_head p{font-size:.8rem;color:#94a3b8;margin-top:.25rem}
+.hgj_toolbar{display:flex;gap:.75rem;padding:1rem 1.5rem;border-bottom:1px solid #f1f5f9;flex-wrap:wrap}
+.hgj_btn{padding:.65em 1.4em;font-size:.88rem;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
+.hgj_btn-get{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.hgj_btn-get:hover{box-shadow:0 6px 16px rgba(16,185,129,.3);transform:translateY(-1px)}
+.hgj_btn-post{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.hgj_btn-post:hover{box-shadow:0 6px 16px rgba(59,130,246,.3);transform:translateY(-1px)}
+.hgj_btn:disabled{opacity:.6;cursor:not-allowed}
+.hgj_body{padding:1rem 1.5rem;max-height:480px;overflow:auto}
+.hgj_meta-bar{display:flex;justify-content:space-between;align-items:center;font-size:.78rem;color:#94a3b8;margin-bottom:.75rem}
+.hgj_method{font-weight:700;padding:.2em .7em;border-radius:.3em;color:#fff}
+.hgj_method.GET{background:#10b981}
+.hgj_method.POST{background:#3b82f6}
+.hgj_status{font-family:Consolas,monospace}
+.hgj_code{background:#0f172a;color:#e2e8f0;padding:1rem;border-radius:.5rem;font-family:Consolas,"Courier New",monospace;font-size:.82rem;line-height:1.6;white-space:pre-wrap;word-break:break-all;overflow:auto;max-height:380px}
+.hgj_err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:.85rem;border-radius:.5rem;margin-top:.75rem;font-size:.88rem}
+.hgj_empty{color:#94a3b8;text-align:center;padding:2rem;font-size:.88rem}
+.hgj_spinner{display:inline-block;width:16px;height:16px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:hgj_spin .7s linear infinite;vertical-align:middle;margin-right:.5rem}
+@keyframes hgj_spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-4 GET/POST 接口测试 -->
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <h1>17-4 GET / POST 接口测试</h1>
+        <p>https://jsonplaceholder.typicode.com/posts</p>
+    </div>
+    <div class="hgj_toolbar">
+        <button class="hgj_btn hgj_btn-get" id="hgj_getBtn">⬇️ GET  /posts  取列表</button>
+        <button class="hgj_btn hgj_btn-post" id="hgj_postBtn">⬆️ POST /posts  提交新帖</button>
+    </div>
+    <div class="hgj_body" id="hgj_body">
+        <div class="hgj_empty">点击上方按钮测试接口 👆</div>
+    </div>
+</div>
+<script>
+(function(){
+    const hgj_url='https://jsonplaceholder.typicode.com/posts';
+    const hgj_body=document.getElementById('hgj_body');
+    const hgj_getBtn=document.getElementById('hgj_getBtn');
+    const hgj_postBtn=document.getElementById('hgj_postBtn');
+
+    function hgj_showLoading(){ hgj_body.innerHTML='<div class="hgj_empty"><div class="hgj_spinner"></div>请求中...</div>'; }
+    function hgj_showErr(msg){ hgj_body.innerHTML+='<div class="hgj_err">❌ 错误：'+msg+'</div>'; }
+
+    async function hgj_doGet(){
+        hgj_getBtn.disabled=hgj_postBtn.disabled=true;
+        hgj_showLoading();
+        try{
+            const res=await fetch(hgj_url);
+            if(!res.ok) throw new Error('HTTP '+res.status+' '+res.statusText);
+            const data=await res.json();
+            hgj_body.innerHTML=hgj_buildUI('GET', res.status, res.statusText, data);
+        }catch(e){ hgj_body.innerHTML=''; hgj_showErr(e.message); }
+        finally{ hgj_getBtn.disabled=hgj_postBtn.disabled=false; }
+    }
+
+    async function hgj_doPost(){
+        hgj_getBtn.disabled=hgj_postBtn.disabled=true;
+        hgj_showLoading();
+        const hgj_payload={ title:'胡国静测试帖 · '+new Date().toLocaleTimeString('zh-CN'), body:'这是一条 POST 请求创建的帖子 🎉', userId:1 };
+        try{
+            const res=await fetch(hgj_url,{
+                method:'POST',
+                headers:{'Content-Type':'application/json;charset=UTF-8'},
+                body:JSON.stringify(hgj_payload)
+            });
+            if(!res.ok) throw new Error('HTTP '+res.status+' '+res.statusText);
+            const data=await res.json();
+            hgj_body.innerHTML=hgj_buildUI('POST', res.status, res.statusText, data, hgj_payload);
+        }catch(e){ hgj_body.innerHTML=''; hgj_showErr(e.message); }
+        finally{ hgj_getBtn.disabled=hgj_postBtn.disabled=false; }
+    }
+
+    function hgj_buildUI(method,status,statusText,data,payload){
+        const hgj_payloadBlock=payload?`【请求 payload】\n${JSON.stringify(payload,null,2)}\n\n` : '';
+        const hgj_dataStr=typeof data==='string'?data:JSON.stringify(data,null,2);
+        return `<div class="hgj_meta-bar">
+            <span class="hgj_method ${method}">${method}</span>
+            <span class="hgj_status">Status: <b style="color:${status>=200&&status<300?'#10b981':'#ef4444'}">${status} ${statusText}</b></span>
+        </div>
+        <div class="hgj_code">${hgj_payloadBlock}【响应数据】\n${hgj_dataStr}</div>`;
+    }
+
+    hgj_getBtn.onclick=hgj_doGet;
+    hgj_postBtn.onclick=hgj_doPost;
+})();
+</script>
+</body>
+</html>

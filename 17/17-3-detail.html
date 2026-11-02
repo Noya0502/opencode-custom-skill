@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-3 商品详情</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#f1f5f9;min-height:100vh;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#ec4899;color:#fff;border-color:#ec4899;transform:translateY(-2px)}
+.hgj_container{max-width:860px;margin:2rem auto;background:#fff;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
+.hgj_row{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:640px){.hgj_row{grid-template-columns:1fr}}
+.hgj_photos{background:#f8fafc;display:flex;flex-direction:column;align-items:center;padding:1.25rem;gap:.8rem}
+.hgj_main-img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:.5rem;border:1px solid #e2e8f0}
+.hgj_thumbs{display:flex;gap:.5rem;overflow-x:auto;width:100%}
+.hgj_thumb{width:60px;height:60px;object-fit:cover;border:2px solid transparent;border-radius:.3rem;cursor:pointer;flex-shrink:0;background:#fff}
+.hgj_thumb.hgj_sel{border-color:#ec4899}
+.hgj_detail{padding:1.5rem}
+.hgj_meta{font-size:.78rem;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.35rem}
+.hgj_title{font-size:1.3rem;font-weight:800;margin-bottom:.6rem}
+.hgj_desc{color:#475569;line-height:1.7;font-size:.9rem;margin-bottom:1rem}
+.hgj_price-row{display:flex;align-items:baseline;gap:.75rem;margin-bottom:.6rem}
+.hgj_price{font-size:1.8rem;color:#ec4899;font-weight:800}
+.hgj_discount{font-size:.82rem;color:#fff;background:#ef4444;padding:.2em .5em;border-radius:.3em;font-weight:600}
+.hgj_old{font-size:.8rem;color:#94a3b8;text-decoration:line-through}
+.hgj_tags{display:flex;gap:.5rem;flex-wrap:wrap;margin:.75rem 0}
+.hgj_tag{font-size:.75rem;background:#f1f5f9;color:#475569;padding:.25em .7em;border-radius:2em}
+.hgj_badge{font-size:.75rem;background:#ecfdf5;color:#047857;padding:.25em .7em;border-radius:2em}
+.hgj_err,.hgj_loading{padding:3rem;text-align:center;color:#94a3b8}
+.hgj_err{color:#b91c1c}
+.hgj_spinner{display:inline-block;width:22px;height:22px;border:3px solid #e2e8f0;border-top-color:#ec4899;border-radius:50%;animation:hgj_spin .7s linear infinite;vertical-align:middle;margin-right:.5rem}
+@keyframes hgj_spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-3 商品详情页 -->
+<a href="17-3.html" class="hgj_back">← 返回列表</a>
+<div class="hgj_container" id="hgj_container">
+    <div class="hgj_loading"><div class="hgj_spinner"></div>加载中...</div>
+</div>
+<script>
+(function(){
+    const hgj_params=new URLSearchParams(location.search);
+    const hgj_id=hgj_params.get('id');
+    const hgj_box=document.getElementById('hgj_container');
+    if(!hgj_id){ hgj_box.innerHTML='<div class="hgj_err">❌ 缺少商品 id 参数</div>'; return; }
+
+    async function hgj_fetch(){
+        try{
+            const res=await fetch('https://dummyjson.com/products/'+hgj_id);
+            if(!res.ok) throw new Error('HTTP '+res.status);
+            const p=await res.json();
+            const imgs=p.images&&p.images.length?p.images:[p.thumbnail].filter(Boolean);
+            hgj_box.innerHTML=`
+            <div class="hgj_row">
+                <div class="hgj_photos">
+                    <img class="hgj_main-img" id="hgj_main" src="${imgs[0]}" alt="">
+                    <div class="hgj_thumbs">
+                        ${imgs.map((src,i)=>`<img class="hgj_thumb ${i===0?'hgj_sel':''}" src="${src}" data-src="${src}" alt="">`).join('')}
+                    </div>
+                </div>
+                <div class="hgj_detail">
+                    <div class="hgj_meta">#${p.id} · ${p.category||''}</div>
+                    <h2 class="hgj_title">${p.title}</h2>
+                    <div class="hgj_desc">${p.description||'—'}</div>
+                    <div class="hgj_price-row">
+                        <span class="hgj_price">¥ ${p.price.toFixed(2)}</span>
+                        ${p.discountPercentage?`<span class="hgj_discount">-${p.discountPercentage.toFixed(1)}%</span>`:''}
+                        <span class="hgj_old">¥ ${(p.price*(1+p.discountPercentage/100||0)).toFixed(2)}</span>
+                    </div>
+                    <div class="hgj_tags">
+                        <span class="hgj_tag">品牌：${p.brand||'—'}</span>
+                        <span class="hgj_tag">⭐ ${(p.rating||0).toFixed(1)}</span>
+                        <span class="hgj_tag">库存 ${p.stock||0}</span>
+                        ${p.availabilityStatus?`<span class="hgj_badge">${p.availabilityStatus}</span>`:''}
+                    </div>
+                </div>
+            </div>`;
+            // 缩略图切换
+            const main=document.getElementById('hgj_main');
+            document.querySelectorAll('.hgj_thumb').forEach(t=>{
+                t.onclick=()=>{
+                    main.src=t.dataset.src;
+                    document.querySelectorAll('.hgj_thumb').forEach(x=>x.classList.remove('hgj_sel'));
+                    t.classList.add('hgj_sel');
+                };
+            });
+        }catch(e){ hgj_box.innerHTML=`<div class="hgj_err">❌ 请求失败：${e.message}</div>`; }
+    }
+    hgj_fetch();
+})();
+</script>
+</body>
+</html>

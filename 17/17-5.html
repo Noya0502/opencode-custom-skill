@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-5 setTimeout & setInterval</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#ecfeff,#e0e7ff);min-height:100vh;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#06b6d4;color:#fff;border-color:#06b6d4;transform:translateY(-2px)}
+.hgj_wrap{max-width:860px;margin:0 auto;background:#fff;border-radius:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
+.hgj_head{padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9}
+.hgj_head h1{font-size:1.15rem}
+.hgj_head p{font-size:.8rem;color:#94a3b8;margin-top:.25rem}
+.hgj_panels{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#f1f5f9}
+@media(max-width:640px){.hgj_panels{grid-template-columns:1fr}}
+.hgj_panel{background:#fff;padding:1.25rem}
+.hgj_panel h2{font-size:.95rem;color:#334155;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.hgj_tag{font-size:.7rem;background:#e0e7ff;color:#4338ca;padding:.15em .55em;border-radius:2em;font-weight:600}
+.hgj_tag.interval{background:#dcfce7;color:#15803d}
+.hgj_count{font-family:Consolas,monospace;font-size:.9rem;color:#6366f1;margin-left:auto}
+.hgj_controls{display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap}
+.hgj_btn{padding:.5em 1.1em;font-size:.82rem;border:none;border-radius:.4em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
+.hgj_start{background:linear-gradient(135deg,#06b6d4,#0891b2);color:#fff}
+.hgj_stop{background:#f1f5f9;color:#475569}
+.hgj_stop:hover{background:#fee2e2;color:#b91c1c}
+.hgj_btn:disabled{opacity:.5;cursor:not-allowed}
+.hgj_log{background:#0f172a;color:#a5f3fc;font-family:Consolas,"Courier New",monospace;font-size:.78rem;line-height:1.65;padding:.85rem;border-radius:.45rem;height:220px;overflow-y:auto}
+.hgj_log div{opacity:0;animation:hgj_fade .3s ease forwards}
+@keyframes hgj_fade{to{opacity:1}}
+.hgj_tstamp{color:#94a3b8}
+.hgj_type-timeout{color:#fbbf24}
+.hgj_type-interval{color:#34d399}
+.hgj_cleared{color:#fca5a5}
+.hgj_counter{font-family:Consolas,monospace;font-size:.9rem;color:#64748b;margin-bottom:.5rem}
+.hgj_counter b{color:#06b6d4;font-size:1.1rem}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-5 setTimeout & setInterval 定时器 -->
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <h1>17-5 两种定时器演示</h1>
+        <p>setTimeout（一次性延时） vs setInterval（循环定时器），附停止按钮</p>
+    </div>
+    <div class="hgj_panels">
+        <!-- setTimeout -->
+        <div class="hgj_panel">
+            <h2><span class="hgj_tag">setTimeout</span> 一次性 3 秒后执行 <span class="hgj_count" id="hgj_stCount">已执行 0 次</span></h2>
+            <div class="hgj_controls">
+                <button class="hgj_btn hgj_start" id="hgj_stStart">▶ 启动（3 秒后打印一次）</button>
+                <button class="hgj_btn hgj_stop"  id="hgj_stStop">■ 取消</button>
+            </div>
+            <div class="hgj_log" id="hgj_stLog"></div>
+        </div>
+        <!-- setInterval -->
+        <div class="hgj_panel">
+            <h2><span class="hgj_tag interval">setInterval</span> 每 1 秒打印 <span class="hgj_count" id="hgj_siCount">已执行 0 次</span></h2>
+            <div class="hgj_controls">
+                <button class="hgj_btn hgj_start" id="hgj_siStart">▶ 启动</button>
+                <button class="hgj_btn hgj_stop"  id="hgj_siStop">■ 停止</button>
+            </div>
+            <div class="hgj_log" id="hgj_siLog"></div>
+        </div>
+    </div>
+</div>
+<script>
+(function(){
+    function hgj_ts(){ return new Date().toLocaleTimeString('zh-CN',{hour12:false}); }
+    function hgj_append(el,cls,text){
+        const d=document.createElement('div');
+        d.innerHTML='<span class="hgj_tstamp">['+hgj_ts()+']</span> <span class="'+cls+'">'+text+'</span>';
+        el.appendChild(d);
+        el.scrollTop=el.scrollHeight;
+    }
+
+    // === setTimeout ===
+    const stLog=document.getElementById('hgj_stLog');
+    const stCount=document.getElementById('hgj_stCount');
+    let stTimer=null,stN=0;
+    document.getElementById('hgj_stStart').onclick=()=>{
+        if(stTimer) return;
+        hgj_append(stLog,'hgj_type-timeout','⏳ setTimeout 设置，3 秒后执行...');
+        stTimer=setTimeout(()=>{
+            stTimer=null;
+            stN++;
+            stCount.textContent='已执行 '+stN+' 次';
+            hgj_append(stLog,'hgj_type-timeout','✅ setTimeout 触发！任务 #'+stN);
+        },3000);
+    };
+    document.getElementById('hgj_stStop').onclick=()=>{
+        if(stTimer){ clearTimeout(stTimer); stTimer=null; hgj_append(stLog,'hgj_cleared','🛑 clearTimeout 已取消'); }
+    };
+
+    // === setInterval ===
+    const siLog=document.getElementById('hgj_siLog');
+    const siCount=document.getElementById('hgj_siCount');
+    let siTimer=null,siN=0;
+    document.getElementById('hgj_siStart').onclick=()=>{
+        if(siTimer) return;
+        hgj_append(siLog,'hgj_type-interval','▶ setInterval 启动（每 1 秒一次）');
+        siTimer=setInterval(()=>{
+            siN++;
+            siCount.textContent='已执行 '+siN+' 次';
+            hgj_append(siLog,'hgj_type-interval','🔁 第 '+siN+' 次 tick');
+        },1000);
+    };
+    document.getElementById('hgj_siStop').onclick=()=>{
+        if(siTimer){ clearInterval(siTimer); siTimer=null; hgj_append(siLog,'hgj_cleared','🛑 clearInterval 已停止'); }
+    };
+})();
+</script>
+</body>
+</html>

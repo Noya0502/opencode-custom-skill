@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-1 fetch 请求用户数据</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#f8fafc,#eef2ff);min-height:100vh;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#6366f1;color:#fff;border-color:#6366f1;transform:translateY(-2px)}
+.hgj_wrap{max-width:900px;margin:2rem auto;background:#fff;border-radius:.75rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
+.hgj_head{padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center}
+.hgj_head h1{font-size:1.1rem;font-weight:700}
+.hgj_head p{font-size:.8rem;color:#94a3b8;margin-top:.25rem}
+.hgj_btn{padding:.6em 1.4em;font-size:.85rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
+.hgj_btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(99,102,241,.3)}
+.hgj_btn:disabled{opacity:.6;cursor:not-allowed}
+.hgj_body{padding:1rem 1.5rem}
+.hgj_loading{text-align:center;color:#94a3b8;padding:2rem;font-size:.9rem}
+.hgj_spinner{display:inline-block;width:18px;height:18px;border:3px solid #e2e8f0;border-top-color:#6366f1;border-radius:50%;animation:hgj_spin .7s linear infinite;vertical-align:middle;margin-right:.5rem}
+@keyframes hgj_spin{to{transform:rotate(360deg)}}
+.hgj_error{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:1rem;border-radius:.5rem;margin-bottom:1rem;font-size:.88rem}
+.hgj_user{display:flex;gap:1rem;padding:1rem;border:1px solid #f1f5f9;border-radius:.6rem;margin-bottom:.75rem;transition:.2s}
+.hgj_user:hover{border-color:#6366f1;background:#fafaff;transform:translateX(4px)}
+.hgj_avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;flex-shrink:0}
+.hgj_info{flex:1;min-width:0}
+.hgj_name{font-weight:700;font-size:1rem;color:#1e293b}
+.hgj_username{font-size:.78rem;color:#6366f1;margin-bottom:.3rem}
+.hgj_meta{font-size:.8rem;color:#64748b;line-height:1.6}
+.hgj_meta span{margin-right:1rem}
+.hgj_meta .hgj_lbl{color:#94a3b8}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-1 fetch请求用户数据 -->
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <div>
+            <h1>17-1 fetch 请求用户数据</h1>
+            <p>接口：https://jsonplaceholder.typicode.com/users</p>
+        </div>
+        <button class="hgj_btn" id="hgj_loadBtn">🔄 重新请求</button>
+    </div>
+    <div class="hgj_body" id="hgj_body">
+        <div class="hgj_loading"><div class="hgj_spinner"></div>请求中...</div>
+    </div>
+</div>
+<script>
+(function(){
+    const hgj_url = 'https://jsonplaceholder.typicode.com/users';
+    const hgj_body = document.getElementById('hgj_body');
+    const hgj_btn  = document.getElementById('hgj_loadBtn');
+
+    function hgj_loading(){ hgj_body.innerHTML = '<div class="hgj_loading"><div class="hgj_spinner"></div>请求中...</div>'; }
+    function hgj_err(msg){
+        hgj_body.innerHTML = '<div class="hgj_error">❌ 请求失败：' + (msg||'未知错误') + '</div>' +
+                             '<button class="hgj_btn" id="hgj_retry">重试</button>';
+        document.getElementById('hgj_retry').onclick = hgj_fetch;
+    }
+
+    function hgj_render(list){
+        if(!Array.isArray(list)||list.length===0){ hgj_body.innerHTML='<div class="hgj_loading">无数据</div>'; return; }
+        hgj_body.innerHTML = list.map(u=>{
+            const initial = (u.name||'?').trim().charAt(0);
+            return '<div class="hgj_user">' +
+                '<div class="hgj_avatar">'+initial+'</div>' +
+                '<div class="hgj_info">' +
+                    '<div class="hgj_name">'+u.name+'</div>' +
+                    '<div class="hgj_username">@'+u.username+'</div>' +
+                    '<div class="hgj_meta">' +
+                        '<span><span class="hgj_lbl">🆔</span>'+u.id+'</span>' +
+                        '<span><span class="hgj_lbl">📧</span>'+u.email+'</span>' +
+                        '<span><span class="hgj_lbl">📞</span>'+u.phone+'</span>' +
+                    '</div>' +
+                    '<div class="hgj_meta"><span><span class="hgj_lbl">🏢</span>'+(u.company&&u.company.name||'—')+'</span>' +
+                        '<span><span class="hgj_lbl">🌐</span>'+u.website+'</span></div>' +
+                '</div></div>';
+        }).join('');
+    }
+
+    async function hgj_fetch(){
+        hgj_btn.disabled = true;
+        hgj_loading();
+        try {
+            const res = await fetch(hgj_url);
+            if(!res.ok) throw new Error('HTTP '+res.status);
+            const data = await res.json();
+            hgj_render(data);
+        } catch(e){ hgj_err(e.message); }
+        finally{ hgj_btn.disabled=false; }
+    }
+
+    hgj_btn.onclick = hgj_fetch;
+    hgj_fetch();
+})();
+</script>
+</body>
+</html>

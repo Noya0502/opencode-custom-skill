@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-2 随机狗狗图片</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#fef3c7,#fde68a);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#f59e0b;color:#fff;border-color:#f59e0b;transform:translateY(-2px)}
+h1{font-size:1.5rem;margin:1rem 0 .5rem;color:#78350f}
+p.hgj_sub{font-size:.85rem;color:#92400e;margin-bottom:1.5rem}
+.hgj_card{background:#fff;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.1);overflow:hidden;max-width:560px;width:100%}
+.hgj_img-box{width:100%;aspect-ratio:4/3;background:#f1f5f9;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.hgj_img-box img{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s ease}
+.hgj_img-box img.hgj_show{opacity:1}
+.hgj_spinner{width:40px;height:40px;border:4px solid #e2e8f0;border-top-color:#f59e0b;border-radius:50%;animation:hgj_spin .8s linear infinite}
+@keyframes hgj_spin{to{transform:rotate(360deg)}}
+.hgj_info{padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;gap:.5rem;flex-wrap:wrap}
+.hgj_breed{font-weight:600;color:#1e293b;font-size:.95rem;word-break:break-all}
+.hgj_btns{display:flex;gap:.5rem}
+button.hgj_btn{padding:.55em 1.2em;font-size:.85rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;transition:.2s}
+button.hgj_btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(245,158,11,.35)}
+button.hgj_btn:disabled{opacity:.6;cursor:not-allowed}
+.hgj_err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:.8rem;border-radius:.5rem;margin-top:1rem;font-size:.88rem;max-width:560px;text-align:center}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-2 fetch随机狗狗图片 -->
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+<h1>🐶 随机狗狗图片</h1>
+<p class="hgj_sub">接口：https://dog.ceo/api/breeds/image/random</p>
+
+<div class="hgj_card">
+    <div class="hgj_img-box" id="hgj_imgBox">
+        <div class="hgj_spinner" id="hgj_spinner"></div>
+    </div>
+    <div class="hgj_info">
+        <div class="hgj_breed" id="hgj_breed">— 等待加载 —</div>
+        <div class="hgj_btns">
+            <button class="hgj_btn" id="hgj_loadBtn">🔄 换一张</button>
+        </div>
+    </div>
+</div>
+<div id="hgj_errBox"></div>
+
+<script>
+(function(){
+    const hgj_url='https://dog.ceo/api/breeds/image/random';
+    const hgj_imgBox=document.getElementById('hgj_imgBox');
+    const hgj_breed=document.getElementById('hgj_breed');
+    const hgj_btn  =document.getElementById('hgj_loadBtn');
+    const hgj_errBox=document.getElementById('hgj_errBox');
+
+    function hgj_showErr(msg){ hgj_errBox.innerHTML='<div class="hgj_err">❌ 加载失败：'+msg+'  请稍后再试~</div>'; }
+    function hgj_clearErr(){ hgj_errBox.innerHTML=''; }
+
+    async function hgj_fetch(){
+        hgj_btn.disabled=true;
+        hgj_clearErr();
+        hgj_imgBox.innerHTML='<div class="hgj_spinner"></div>';
+        hgj_breed.textContent='加载中...';
+        try {
+            const res=await fetch(hgj_url);
+            if(!res.ok) throw new Error('HTTP '+res.status);
+            const data=await res.json();
+            if(data.status!=='success') throw new Error(data.message||'接口返回异常');
+            const hgj_imgUrl=data.message;
+            // 预加载图片
+            const hgj_img=new Image();
+            hgj_img.src=hgj_imgUrl;
+            hgj_img.onload=()=>{
+                hgj_imgBox.innerHTML='';
+                hgj_img.className='hgj_show';
+                hgj_imgBox.appendChild(hgj_img);
+                // 从URL提取品种
+                const m=hgj_imgUrl.match(/breeds\/([^/]+)/);
+                hgj_breed.textContent= m?'品种：'+m[1].replace('-',' '):'品种未知';
+            };
+            hgj_img.onerror=()=>{ hgj_imgBox.innerHTML='<div style="color:#94a3b8">🖼️ 图片加载失败</div>'; hgj_showErr('图片资源加载失败'); };
+        } catch(e){
+            hgj_imgBox.innerHTML='<div style="color:#b91c1c">😿 请求失败</div>';
+            hgj_showErr(e.message);
+            hgj_breed.textContent='—';
+        } finally{ hgj_btn.disabled=false; }
+    }
+
+    hgj_btn.onclick=hgj_fetch;
+    hgj_fetch();
+})();
+</script>
+</body>
+</html>

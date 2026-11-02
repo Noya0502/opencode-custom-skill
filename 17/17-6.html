@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>17-6 Promise + async/await 包饺子流程</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:linear-gradient(135deg,#fef3c7,#fce7f3);min-height:100vh;padding:2rem 1rem;color:#1e293b}
+.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s}
+.hgj_back:hover{background:#f97316;color:#fff;border-color:#f97316;transform:translateY(-2px)}
+.hgj_wrap{max-width:820px;margin:0 auto;background:#fff;border-radius:1rem;box-shadow:0 10px 30px rgba(0,0,0,.08);overflow:hidden}
+.hgj_head{padding:1.25rem 1.5rem;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}
+.hgj_head h1{font-size:1.15rem}
+.hgj_head p{font-size:.8rem;color:#94a3b8;margin-top:.25rem}
+.hgj_btn{padding:.55em 1.2em;font-size:.85rem;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:600;background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;transition:.2s}
+.hgj_btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(249,115,22,.35)}
+.hgj_btn:disabled{opacity:.6;cursor:not-allowed}
+.hgj_body{padding:1.25rem 1.5rem}
+.hgj_timeline{position:relative;padding-left:1.5rem}
+.hgj_timeline::before{content:'';position:absolute;left:.5rem;top:.5rem;bottom:.5rem;width:2px;background:linear-gradient(#f97316,#ec4899,#8b5cf6)}
+.hgj_step{position:relative;padding:.65rem 0;font-size:.9rem;animation:hgj_in .35s ease}
+@keyframes hgj_in{from{opacity:0;transform:translateX(-8px)}}
+.hgj_step::before{content:'';position:absolute;left:-1.25rem;top:.9rem;width:12px;height:12px;border-radius:50%;background:#e2e8f0;border:2px solid #fff;box-shadow:0 0 0 2px #f97316}
+.hgj_step.hgj_ok::before{background:#10b981;box-shadow:0 0 0 2px #10b981}
+.hgj_step.hgj_run::before{background:#f97316;box-shadow:0 0 0 2px #f97316;animation:hgj_pulse 1s infinite}
+@keyframes hgj_pulse{50%{transform:scale(1.3);opacity:.6}}
+.hgj_step.hgj_par::before{box-shadow:0 0 0 2px #ec4899}
+.hgj_step.hgj_par.hgj_ok::before{box-shadow:0 0 0 2px #10b981}
+.hgj_tstamp{color:#94a3b8;font-size:.78rem;margin-right:.4rem;font-family:Consolas,monospace}
+.hgj_tag{font-size:.7rem;padding:.15em .55em;border-radius:2em;margin-right:.4rem;font-weight:600}
+.hgj_tag.seq{background:#f1f5f9;color:#475569}
+.hgj_tag.par{background:#fce7f3;color:#be185d}
+.hgj_tag.prom{background:#fef3c7;color:#b45309}
+.hgj_step b{font-weight:700}
+.hgj_summary{margin-top:1rem;padding:.85rem 1rem;background:#fefce8;border:1px solid #fde68a;border-radius:.55rem;font-size:.88rem;color:#854d0e;display:none}
+.hgj_summary.hgj_show{display:block;animation:hgj_in .4s}
+.hgj_summary b{color:#b45309}
+</style>
+</head>
+<body>
+<!-- 姓名：胡国静，日期：17-6 Promise+async/await 包饺子流程 -->
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <div>
+            <h1>🥟 包饺子流程 · Promise + async/await</h1>
+            <p>买原料 6s → 和面、和馅并行 → 包饺子 → 吃饺子</p>
+        </div>
+        <button class="hgj_btn" id="hgj_startBtn">🚀 开始流程</button>
+    </div>
+    <div class="hgj_body">
+        <div class="hgj_timeline" id="hgj_timeline"></div>
+        <div class="hgj_summary" id="hgj_summary"></div>
+    </div>
+</div>
+<script>
+(function(){
+    const hgj_timeline=document.getElementById('hgj_timeline');
+    const hgj_summary=document.getElementById('hgj_summary');
+    const hgj_btn=document.getElementById('hgj_startBtn');
+    const hgj_startAt=Date.now();
+
+    function hgj_ts(){
+        const s=((Date.now()-hgj_startAt)/1000).toFixed(1);
+        return '<span class="hgj_tstamp">+'+s+'s</span>';
+    }
+    function hgj_add(text,cls){
+        const el=document.createElement('div');
+        el.className='hgj_step '+(cls||'');
+        el.innerHTML=hgj_ts()+text;
+        hgj_timeline.appendChild(el);
+        hgj_timeline.scrollTop=hgj_timeline.scrollHeight;
+        return el;
+    }
+    function hgj_sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    // ====== 子任务 ======
+    async function hgj_buy(){
+        const step=hgj_add('<span class="hgj_tag seq">串行</span><b>🛒 买原料</b> 开始（预计 6s）','hgj_run');
+        await hgj_sleep(6000);
+        step.className='hgj_step hgj_ok';
+        step.innerHTML=hgj_ts()+'<span class="hgj_tag seq">串行</span><b>🛒 买原料</b> 完成 ✅（面粉 + 猪肉 + 白菜）';
+    }
+    async function hgj_makeDough(){
+        const step=hgj_add('<span class="hgj_tag par">并行 A</span><b>🍞 和面</b> 开始（预计 3s）','hgj_par hgj_run');
+        await hgj_sleep(3000);
+        step.className='hgj_step hgj_par hgj_ok';
+        step.innerHTML=hgj_ts()+'<span class="hgj_tag par">并行 A</span><b>🍞 和面</b> 完成 ✅';
+    }
+    async function hgj_makeFilling(){
+        const step=hgj_add('<span class="hgj_tag par">并行 B</span><b>🥬 和馅</b> 开始（预计 4s）','hgj_par hgj_run');
+        await hgj_sleep(4000);
+        step.className='hgj_step hgj_par hgj_ok';
+        step.innerHTML=hgj_ts()+'<span class="hgj_tag par">并行 B</span><b>🥬 和馅</b> 完成 ✅';
+    }
+    async function hgj_wrap(){
+        const step=hgj_add('<span class="hgj_tag seq">串行</span><b>🥟 包饺子</b> 开始（预计 5s）','hgj_run');
+        await hgj_sleep(5000);
+        step.className='hgj_step hgj_ok';
+        step.innerHTML=hgj_ts()+'<span class="hgj_tag seq">串行</span><b>🥟 包饺子</b> 完成 ✅ 整整齐齐 30 个';
+    }
+    async function hgj_eat(){
+        const step=hgj_add('<span class="hgj_tag seq">串行</span><b>😋 吃饺子</b> 开始（预计 2s）','hgj_run');
+        await hgj_sleep(2000);
+        step.className='hgj_step hgj_ok';
+        step.innerHTML=hgj_ts()+'<span class="hgj_tag seq">串行</span><b>😋 吃饺子</b> 完成 ✅ 真香！';
+    }
+
+    // ====== 主流程 ======
+    async function hgj_main(){
+        hgj_btn.disabled=true;
+        hgj_timeline.innerHTML='';
+        hgj_summary.className='hgj_summary';
+        hgj_summary.textContent='';
+        hgj_add('<b>🎉 包饺子流程开始</b>','');
+
+        const t0=Date.now();
+        await hgj_buy();
+        hgj_add('<b>⚡ 原料就绪，和面 + 和馅 并行启动！</b><span class="hgj_tag prom">Promise.all</span>','');
+        await Promise.all([ hgj_makeDough(), hgj_makeFilling() ]);
+        hgj_add('<b>✅ 和面和馅全部完成，开始包饺子</b>','');
+        await hgj_wrap();
+        await hgj_eat();
+        const total=((Date.now()-t0)/1000).toFixed(1);
+        hgj_summary.innerHTML='<b>🍽️ 总结：</b>总耗时 <b>'+total+'s</b>（若串行 = 6+3+4+5+2 = 20s）<br>'+
+            '使用 <code>Promise.all([和面, 和馅])</code> 让两个子任务并行，节省了约 3 秒 ⚡';
+        hgj_summary.classList.add('hgj_show');
+        hgj_btn.disabled=false;
+    }
+
+    hgj_btn.onclick=hgj_main;
+    // 自动演示一次
+    hgj_main();
+})();
+</script>
+</body>
+</html>
