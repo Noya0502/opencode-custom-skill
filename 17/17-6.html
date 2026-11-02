@@ -3,387 +3,676 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>17-6 Promise 包饺子 · 可视化流水线</title>
+<title>17-6 Promise 包饺子 · 终极可视化</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:radial-gradient(ellipse at top,#fef3c7,#fce7f3 60%,#fbcfe8);min-height:100vh;padding:2rem 1rem;color:#1e293b}
-.hgj_back{position:fixed;top:1.5rem;right:2rem;padding:.6em 1.3em;font-size:.9rem;color:#475569;text-decoration:none;background:#fff;border:1px solid #e2e8f0;border-radius:2em;box-shadow:0 2px 8px rgba(0,0,0,.06);transition:.3s;z-index:10}
+body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#0b0f1a;color:#e2e8f0;min-height:100vh;overflow-x:hidden}
+.hgj_back{position:fixed;top:1.25rem;right:1.5rem;padding:.5em 1.1em;font-size:.82rem;color:#cbd5e1;text-decoration:none;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:2em;backdrop-filter:blur(8px);transition:.3s;z-index:50}
 .hgj_back:hover{background:#f97316;color:#fff;border-color:#f97316;transform:translateY(-2px)}
 
-.hgj_wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:1.25rem}
+/* ===== 背景粒子 ===== */
+.hgj_bg{position:fixed;inset:0;pointer-events:none;z-index:0}
+.hgj_bg span{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(249,115,22,.4),transparent 70%);animation:hgj-bg-float linear infinite}
+@keyframes hgj-bg-float{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:.4}90%{opacity:.4}100%{transform:translateY(-10vh) scale(1);opacity:0}}
 
-/* ====== 头部 ====== */
-.hgj_head{background:#fff;border-radius:1rem;padding:1.25rem 1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
-.hgj_head h1{font-size:clamp(1.25rem,3vw,1.6rem);font-weight:800}
-.hgj_head h1 .hgj_emoji{font-size:1.4em}
-.hgj_head p{font-size:.82rem;color:#94a3b8;margin-top:.35rem}
-.hgj_head-btns{display:flex;gap:.5rem;flex-wrap:wrap}
-.hgj_btn{padding:.6em 1.25em;font-size:.85rem;border:none;border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:700;transition:.25s}
-.hgj_btn-primary{background:linear-gradient(135deg,#f97316,#ec4899);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.35)}
-.hgj_btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 22px rgba(249,115,22,.45)}
-.hgj_btn-ghost{background:#f8fafc;color:#64748b;border:1px solid #e2e8f0}
-.hgj_btn-ghost:hover:not(:disabled){background:#f1f5f9}
-.hgj_btn:disabled{opacity:.5;cursor:not-allowed}
+.hgj_wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.hgj_head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem}
+.hgj_head h1{font-size:clamp(1.25rem,3vw,1.7rem);font-weight:800;background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6);-webkit-background-clip:text;background-clip:text;color:transparent;letter-spacing:.02em}
+.hgj_head-sub{font-size:.78rem;color:#64748b;margin-top:.3rem;font-family:Consolas,monospace}
+.hgj_btns{display:flex;gap:.5rem;flex-wrap:wrap}
+.hgj_btn{padding:.55em 1.1em;font-size:.82rem;border:1px solid rgba(255,255,255,.12);border-radius:.5em;cursor:pointer;font-family:inherit;font-weight:700;transition:.25s;background:rgba(255,255,255,.05);color:#e2e8f0}
+.hgj_btn:hover:not(:disabled){transform:translateY(-1px);background:rgba(255,255,255,.1)}
+.hgj_btn-run{background:linear-gradient(135deg,#f97316,#ec4899);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.3)}
+.hgj_btn-run:hover:not(:disabled){box-shadow:0 8px 22px rgba(249,115,22,.45)}
+.hgj_btn-stop{background:linear-gradient(135deg,#ef4444,#dc2626);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.3)}
+.hgj_btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* ====== 两列布局 ====== */
-.hgj_main{display:grid;grid-template-columns:1.2fr 1fr;gap:1.25rem}
-@media(max-width:880px){.hgj_main{grid-template-columns:1fr}}
+/* ===== 主网格 ===== */
+.hgj_grid{display:grid;grid-template-columns:1.4fr 1fr;gap:1.25rem}
+@media(max-width:960px){.hgj_grid{grid-template-columns:1fr}}
+.hgj_panel{background:rgba(15,23,42,.7);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.08);border-radius:1rem;overflow:hidden}
+.hgj_panel-head{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
+.hgj_panel-title{font-size:.9rem;font-weight:700;color:#cbd5e1;display:flex;align-items:center;gap:.5rem}
+.hgj_panel-title::before{content:'';width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#f97316,#ec4899);box-shadow:0 0 8px rgba(249,115,22,.6)}
+.hgj_panel-time{font-family:Consolas,monospace;font-size:.8rem;color:#94a3b8}
+.hgj_panel-body{padding:1.25rem}
 
-/* ====== 动画厨房场景 ====== */
-.hgj_scene{background:#fff;border-radius:1rem;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.hgj_scene-title{font-size:.95rem;font-weight:700;margin-bottom:1rem;color:#334155}
-.hgj_kitchen{position:relative;height:170px;background:linear-gradient(180deg,#fff7ed 0%,#fed7aa 100%);border-radius:.75px;overflow:hidden;border:1px solid #fdba74}
-/* 厨房台面 */
-.hgj_counter{position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(180deg,#fed7aa,#fdba74);border-top:2px solid #fb923c}
-/* 角色 */
-.hgj_worker{position:absolute;font-size:2rem;bottom:48px;left:-40px;transition:left .4s cubic-bezier(.22,1,.36,1);filter:drop-shadow(0 3px 4px rgba(0,0,0,.15));z-index:3}
-.hgj_station{position:absolute;bottom:42px;font-size:1.6rem;filter:drop-shadow(0 2px 3px rgba(0,0,0,.12));transition:transform .3s}
-.hgj_station.hgj_active{transform:scale(1.2);filter:drop-shadow(0 0 10px rgba(249,115,22,.7))}
-.hgj_station.hgj_done{filter:drop-shadow(0 0 8px rgba(34,197,94,.7))}
+/* ===== 厨房场景 ===== */
+.hgj_kitchen{position:relative;height:220px;background:linear-gradient(180deg,#1e293b,#0f172a);border-radius:.75rem;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.05)}
+.hgj_kitchen::before{content:'';position:absolute;bottom:46px;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#f97316,transparent);opacity:.4}
+
+/* SVG 连线层 */
+.hgj_pipes{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+.hgj_pipes path{fill:none;stroke-width:2;stroke-linecap:round;stroke-dasharray:6 4;animation:hgj-pipe-dash 1.2s linear infinite;opacity:.5}
+@keyframes hgj-pipe-dash{to{stroke-dashoffset:-20}}
+
+/* 工位 */
+.hgj_station{position:absolute;bottom:52px;font-size:1.65rem;filter:drop-shadow(0 3px 6px rgba(0,0,0,.4));transition:transform .3s,filter .3s}
+.hgj_station[data-pos="buy"]     { left: 7%; }
+.hgj_station[data-pos="dough"]   { left: 28%; }
+.hgj_station[data-pos="filling"] { left: 48%; }
+.hgj_station[data-pos="wrap"]    { left: 68%; }
+.hgj_station[data-pos="eat"]     { left: 87%; }
+.hgj_station.hgj_active{transform:scale(1.25);filter:drop-shadow(0 0 14px rgba(249,115,22,.8));animation:hgj-pulse .6s ease infinite alternate}
+@keyframes hgj-pulse{to{transform:scale(1.35) rotate(3deg)}}
+.hgj_station.hgj_done{filter:drop-shadow(0 0 12px rgba(34,197,94,.8))}
+.hgj_station .hgj_label{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:.6rem;color:#64748b;white-space:nowrap;font-family:Consolas,monospace}
+
+/* Promise 状态灯 */
+.hgj_light{position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#475569;border:1px solid #1e293b}
+.hgj_light.hgj_pending{background:#3b82f6;animation:hgj-blink .8s infinite;box-shadow:0 0 8px #3b82f6}
+.hgj_light.hgj_running{background:#f97316;animation:hgj-blink .3s infinite;box-shadow:0 0 10px #f97316}
+.hgj_light.hgj_done{background:#10b981;box-shadow:0 0 10px #10b981}
+@keyframes hgj-blink{50%{opacity:.3}}
+
+/* 台面 */
+.hgj_counter{position:absolute;bottom:0;left:0;right:0;height:52px;background:linear-gradient(180deg,#334155,#1e293b);border-top:2px solid #f97316;overflow:hidden}
+.hgj_counter::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 20px,rgba(255,255,255,.03) 20px,rgba(255,255,255,.03) 21px)}
+
+/* 双工人 */
+.hgj_worker{position:absolute;font-size:1.7rem;bottom:56px;transition:left .5s cubic-bezier(.22,1,.36,1),transform .3s;filter:drop-shadow(0 3px 4px rgba(0,0,0,.4));z-index:4}
+.hgj_worker.hgj-back{transform:scaleX(-1)}
+.hgj_worker.hgj-shake{animation:hgj-worker-shake .25s infinite}
+@keyframes hgj-worker-shake{50%{transform:translateX(3px) rotate(-3deg)}}
+.hgj_worker[data-for="buy"]     { --x: 2%; }
+.hgj_worker[data-for="dough"]   { --x: 23%; }
+.hgj_worker[data-for="filling"] { --x: 43%; }
+.hgj_worker[data-for="wrap"]    { --x: 63%; }
+.hgj_worker[data-for="eat"]     { --x: 82%; }
+.hgj_worker.hgj-at-buy     { left: 2%; }
+.hgj_worker.hgj-at-dough   { left: 23%; }
+.hgj_worker.hgj-at-filling { left: 43%; }
+.hgj_worker.hgj-at-wrap    { left: 63%; }
+.hgj_worker.hgj-at-eat     { left: 82%; }
+
+/* 碗/锅容器 */
+.hgj_bowl{position:absolute;bottom:50px;font-size:1.3rem;opacity:.35;transition:opacity .3s}
+.hgj_bowl.hgj_full{opacity:1;filter:drop-shadow(0 0 10px rgba(249,115,22,.6))}
+.hgj_bowl[data-for="buy"]     { left: 9%; }
+.hgj_bowl[data-for="dough"]   { left: 30%; }
+.hgj_bowl[data-for="filling"] { left: 50%; }
+.hgj_bowl[data-for="wrap"]    { left: 70%; }
+
+/* 粒子烟花 */
+.hgj_particles{position:absolute;inset:0;pointer-events:none;z-index:10}
+.hgj_particles div{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:hgj-particle 1s ease-out forwards}
+@keyframes hgj-particle{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--tx),var(--ty)) scale(0);opacity:0}}
+
 /* 饺子瀑布 */
-.hgj_dumplings{position:absolute;top:0;left:0;right:0;height:100%;pointer-events:none;overflow:hidden}
-.hgj_dumpling{position:absolute;font-size:1.2rem;animation:hgj_fall linear forwards;opacity:0}
-@keyframes hgj_fall{0%{transform:translateY(-20px) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(200px) rotate(360deg);opacity:1}}
+.hgj_dumplings{position:absolute;top:0;left:0;right:0;height:100%;pointer-events:none;overflow:hidden;z-index:6}
+.hgj_dumpling{position:absolute;font-size:1rem;animation:hgj-fall linear forwards;opacity:0}
+@keyframes hgj-fall{0%{transform:translateY(-20px) rotate(0);opacity:0}10%{opacity:.9}100%{transform:translateY(230px) rotate(720deg);opacity:.5}}
+
 /* 蒸汽 */
-.hgj_steam{position:absolute;font-size:1.1rem;animation:hgj_rise 3s ease-out infinite;opacity:.5}
-@keyframes hgj_rise{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-60px) scale(1.8);opacity:0}}
+.hgj_steam{position:absolute;font-size:.9rem;animation:hgj-rise 2.5s ease-out infinite;opacity:.5;z-index:3}
+@keyframes hgj-rise{0%{transform:translateY(0) scale(1);opacity:.5}100%{transform:translateY(-50px) scale(2);opacity:0}}
 
-/* 位置预设 */
-.hgj_station[data-pos="buy"]     { left: 10%; }
-.hgj_station[data-pos="dough"]   { left: 32%; }
-.hgj_station[data-pos="filling"] { left: 54%; }
-.hgj_station[data-pos="wrap"]    { left: 74%; }
-.hgj_station[data-pos="eat"]     { left: 90%; }
-.hgj_worker.hgj-at-buy     { left: 6%; }
-.hgj_worker.hgj-at-dough   { left: 25%; }
-.hgj_worker.hgj-at-filling { left: 47%; }
-.hgj_worker.hgj-at-wrap    { left: 68%; }
-.hgj_worker.hgj-at-eat     { left: 84%; }
+/* 浮动 Toast */
+.hgj_toast{position:absolute;top:10px;left:50%;transform:translateX(-50%) translateY(-30px);background:rgba(249,115,22,.95);color:#fff;padding:.35em .8em;border-radius:2em;font-size:.72rem;font-weight:700;opacity:0;transition:all .3s;pointer-events:none;z-index:20;box-shadow:0 4px 12px rgba(249,115,22,.4)}
+.hgj_toast.hgj_show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-/* 时间标尺 */
-.hgj_timer-row{display:flex;align-items:center;gap:.75rem;margin-top:.85rem;padding:.65rem .85rem;background:#fff;border-radius:.6rem;border:1px solid #f1f5f9;font-family:Consolas,monospace;font-size:.9rem}
-.hgj_timer-row b{font-size:1.3rem;color:#f97316;font-variant-numeric:tabular-nums}
-.hgj_timer-row small{color:#94a3b8;margin-left:auto}
+/* ===== 进度条列表 ===== */
+.hgj_tasks{display:flex;flex-direction:column;gap:.55rem;margin-top:.75rem}
+.hgj_task{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:.6rem;padding:.6rem .75rem;transition:all .3s}
+.hgj_task.hgj_run{border-color:rgba(249,115,22,.4);background:rgba(249,115,22,.06);box-shadow:0 0 20px rgba(249,115,22,.1) inset}
+.hgj_task.hgj_done{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.hgj_task-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem;font-size:.8rem}
+.hgj_task-name{color:#cbd5e1;font-weight:600;display:flex;align-items:center;gap:.4rem}
+.hgj_task-lamp{width:8px;height:8px;border-radius:50%;background:#475569}
+.hgj_task.hgj_run .hgj_task-lamp{background:#f97316;box-shadow:0 0 8px #f97316;animation:hgj-blink .5s infinite}
+.hgj_task.hgj_done .hgj_task-lamp{background:#22c55e;box-shadow:0 0 8px #22c55e}
+.hgj_task-status{font-family:Consolas,monospace;font-size:.7rem;color:#64748b}
+.hgj_task-bar{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;position:relative}
+.hgj_task-fill{height:100%;border-radius:3px;width:0;transition:width .15s linear;background:linear-gradient(90deg,var(--c,#f97316),var(--c2,#ec4899));position:relative}
+.hgj_task-fill::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:hgj-shine 1.5s infinite}
+@keyframes hgj-shine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.hgj_task-fill.hgj_parallel::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 5px,rgba(255,255,255,.2) 5px,rgba(255,255,255,.2) 10px);mix-blend-mode:overlay}
 
-/* ====== 任务进度条列表 ====== */
-.hgj_tasks{background:#fff;border-radius:1rem;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-top:1.25rem}
-.hgj_task{margin-bottom:.85rem}
-.hgj_task:last-child{margin-bottom:0}
-.hgj_task-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35rem}
-.hgj_task-name{font-size:.85rem;font-weight:600;color:#334155;display:flex;align-items:center;gap:.4rem}
-.hgj_task-status{font-size:.72rem;color:#94a3b8;font-family:Consolas,monospace}
-.hgj_task-bar{height:8px;background:#f1f5f9;border-radius:4px;overflow:hidden;position:relative}
-.hgj_task-fill{height:100%;border-radius:4px;width:0;transition:width .2s linear;background:var(--c,#cbd5e1)}
-.hgj_task-fill.hgj_parallel::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(255,255,255,.25) 6px,rgba(255,255,255,.25) 12px)}
-.hgj_task-fill.hgj_done{animation:hgj_done-glow .6s ease}
-@keyframes hgj_done-glow{0%{filter:brightness(1)}50%{filter:brightness(1.5) drop-shadow(0 0 8px var(--c))}100%{filter:brightness(1)}}
-.hgj_done-check{color:#10b981;margin-left:auto;font-size:1rem;opacity:0;transition:opacity .3s}
-.hgj_task.hgj_done .hgj_done-check{opacity:1}
-.hgj_task.hgj_run .hgj_task-name::after{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#f97316;margin-left:3px;animation:hgj_blink .8s infinite}
-@keyframes hgj_blink{50%{opacity:.3}}
+/* ===== 右侧面板 ===== */
+.hgj_right{display:flex;flex-direction:column;gap:1.25rem}
 
-/* ====== 甘特图 ====== */
-.hgj_gantt{background:#fff;border-radius:1rem;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.hgj_gantt h2{font-size:.95rem;font-weight:700;margin-bottom:.75rem;color:#334155}
-.hgj_gantt-row{display:grid;grid-template-columns:100px 1fr;align-items:center;gap:.75rem;margin-bottom:.5rem}
-.hgj_gantt-name{font-size:.8rem;color:#64748b;text-align:right;font-family:Consolas,monospace}
-.hgj_gantt-track{position:relative;height:22px;background:#f8fafc;border-radius:4px;overflow:hidden}
-.hgj_gantt-bar{position:absolute;top:2px;height:18px;border-radius:3px;font-size:.65rem;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;transition:width .3s ease}
-.hgj_gantt-bar.hgj_seq{background:linear-gradient(90deg,#f97316,#ea580c)}
-.hgj_gantt-bar.hgj_par{background:linear-gradient(90deg,#ec4899,#be185d)}
-.hgj_gantt-legend{display:flex;gap:1rem;margin-top:.75rem;font-size:.72rem;color:#64748b;justify-content:center}
-.hgj_gantt-legend span{display:flex;align-items:center;gap:.3rem}
-.hgj_gantt-legend i{width:12px;height:12px;border-radius:3px;display:inline-block}
-.hgj_time-axis{position:relative;height:18px;margin-top:.25rem}
-.hgj_time-axis span{position:absolute;font-size:.62rem;color:#94a3b8;font-family:Consolas,monospace;transform:translateX(-50%)}
+/* 状态 JSON */
+.hgj_state-json{font-family:Consolas,"Courier New",monospace;font-size:.7rem;line-height:1.9;background:#020617;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.85rem;min-height:110px;overflow:auto}
+.hgj_state-json .k{color:#c4b5fd}
+.hgj_state-json .v{color:#86efac}
+.hgj_state-json .null{color:#64748b}
+.hgj_state-json .pending{color:#60a5fa}
+.hgj_state-json .run{color:#fbbf24}
+.hgj_state-json .done{color:#22c55e}
+.hgj_state-json .rej{color:#f87171}
 
-/* ====== 代码面板 ====== */
-.hgj_code{background:#1e293b;border-radius:1rem;padding:1.5rem;box-shadow:0 10px 30px rgba(0,0,0,.2);color:#e2e8f0;font-family:Consolas,"Courier New",monospace;font-size:.72rem;line-height:1.85;overflow:auto;max-height:340px}
-.hgj_code .hgj_c-kw{color:#c4b5fd}
-.hgj_code .hgj_c-fn{color:#22d3ee}
-.hgj_code .hgj_c-cmt{color:#64748b;font-style:italic}
-.hgj_code .hgj_c-str{color:#86efac}
-.hgj_code .hgj_c-num{color:#fbbf24}
-.hgj_code .hgj_c-hi{background:rgba(249,115,22,.3);border-radius:3px;padding:0 2px;display:inline-block}
+/* Console */
+.hgj_console{background:#020617;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.75rem;height:170px;overflow-y:auto;font-family:Consolas,"Courier New",monospace;font-size:.72rem;line-height:1.75}
+.hgj_console div{opacity:0;animation:hgj-fade-in .3s ease forwards}
+@keyframes hgj-fade-in{to{opacity:1}}
+.hgj_console .hgj_ts{color:#475569;margin-right:.4rem}
+.hgj_console .hgj_log-info{color:#a5f3fc}
+.hgj_console .hgj_log-resolve{color:#86efac}
+.hgj_console .hgj_log-complete{color:#c4b5fd;font-weight:700}
+.hgj_console .hgj_log-err{color:#f87171}
+.hgj_console .hgj_log-par{color:#f9a8d4}
 
-/* ====== 结果横幅 ====== */
-.hgj_result{background:linear-gradient(135deg,#f97316,#ec4899);color:#fff;border-radius:1rem;padding:1.25rem 1.5rem;display:none;align-items:center;justify-content:space-between;gap:1rem;box-shadow:0 10px 30px rgba(249,115,22,.35);animation:hgj_popin .5s ease}
-.hgj_result.hgj_show{display:flex}
-@keyframes hgj_popin{from{opacity:0;transform:translateY(10px) scale(.97)}}
-.hgj_result-num{font-size:2.2rem;font-weight:900;font-family:Consolas,monospace}
-.hgj_result-label{font-size:.82rem;opacity:.85}
-.hgj_result-save{font-size:.88rem;font-weight:700}
+/* 甘特图 */
+.hgj_gantt{background:#020617;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.85rem 1rem}
+.hgj_gantt-row{display:grid;grid-template-columns:90px 1fr;gap:.6rem;align-items:center;margin-bottom:.35rem}
+.hgj_gantt-name{font-family:Consolas,monospace;font-size:.7rem;color:#94a3b8;text-align:right}
+.hgj_gantt-track{position:relative;height:18px;background:rgba(255,255,255,.04);border-radius:3px;overflow:visible}
+.hgj_gantt-bar{position:absolute;top:2px;height:14px;border-radius:3px;font-size:.6rem;color:#0f172a;font-weight:800;display:flex;align-items:center;justify-content:center;transition:left .4s cubic-bezier(.22,1,.36,1),width .4s cubic-bezier(.22,1,.36,1);box-shadow:0 2px 6px rgba(0,0,0,.3);overflow:hidden}
+.hgj_gantt-bar::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.4),transparent 50%);animation:hgj-shine 1.2s infinite}
+.hgj_gantt-bar.hgj_seq{background:linear-gradient(90deg,#f97316,#fb923c)}
+.hgj_gantt-bar.hgj_par{background:linear-gradient(90deg,#ec4899,#f472b6)}
+.hgj_gantt-bar.hgj_done{filter:saturate(1.3)}
+.hgj_time-axis{position:relative;height:16px;margin-top:.3rem}
+.hgj_time-axis span{position:absolute;font-size:.6rem;color:#475569;font-family:Consolas,monospace;transform:translateX(-50%)}
+.hgj_cursor{position:absolute;top:-4px;bottom:-4px;width:2px;background:linear-gradient(180deg,#f97316,transparent);z-index:5;transition:left .1s linear;box-shadow:0 0 8px #f97316}
+
+/* 总结横幅 */
+.hgj_result{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(.8);background:linear-gradient(135deg,#f97316,#ec4899,#8b5cf6);color:#fff;padding:1.5rem 2.5rem;border-radius:1rem;box-shadow:0 25px 60px rgba(249,115,22,.4);opacity:0;pointer-events:none;z-index:100;transition:all .5s cubic-bezier(.22,1,.36,1);max-width:90vw;text-align:center}
+.hgj_result.hgj_show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.hgj_result h3{font-size:1.4rem;margin-bottom:.5rem}
+.hgj_result b{font-size:2.8rem;font-family:Consolas,monospace}
+.hgj_result small{opacity:.85;font-size:.82rem;display:block;margin-top:.5rem}
+.hgj_result button{margin-top:1rem;padding:.5em 1.5em;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.4);border-radius:2em;font-family:inherit;font-weight:700;cursor:pointer;backdrop-filter:blur(8px)}
+
+/* 底部统计条 */
+.hgj_statusbar{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-top:1.25rem}
+@media(max-width:640px){.hgj_statusbar{grid-template-columns:repeat(2,1fr)}}
+.hgj_statbox{background:rgba(15,23,42,.7);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06);border-radius:.6rem;padding:.85rem 1rem;text-align:center}
+.hgj_statbox .hgj_num{font-family:Consolas,monospace;font-size:1.5rem;font-weight:800;color:#f97316}
+.hgj_statbox .hgj_lbl{font-size:.7rem;color:#64748b;margin-top:.2rem}
+.hgj_statbox.hgj-par .hgj_num{color:#ec4899}
+.hgj_statbox.hgj-saved .hgj_num{color:#22c55e}
+.hgj_statbox.hgj-work .hgj_num{color:#22d3ee}
 </style>
 </head>
 <body>
-<!-- 姓名：胡国静，日期：17-6 Promise+async/await 包饺子可视化 -->
+<!-- 姓名：胡国静，日期：17-6 Promise+async/await 终极可视化 -->
 <a href="../index.html" class="hgj_back">← 返回首页</a>
 
+<!-- 背景粒子 -->
+<div class="hgj_bg" id="hgj_bg"></div>
+
 <div class="hgj_wrap">
-    <!-- 头部 -->
     <div class="hgj_head">
         <div>
-            <h1><span class="hgj_emoji">🥟</span> Promise 包饺子流水线 · 可视化</h1>
-            <p>买原料 6s → 和面 / 和馅 <b>并行</b> → 包饺子 → 吃饺子 &nbsp;|&nbsp; <code>Promise.all</code> vs 串行对比</p>
+            <h1>🥟 Promise 包饺子流水线 · 终极可视化</h1>
+            <div class="hgj_head-sub">async/await + Promise.all · 双工人并行 · 实时状态机 · AbortController</div>
         </div>
-        <div class="hgj_head-btns">
-            <button class="hgj_btn hgj_btn-ghost"   id="hgj_serialBtn">▶ 串行跑（基准）</button>
-            <button class="hgj_btn hgj_btn-primary" id="hgj_parallelBtn">⚡ Promise.all 跑</button>
+        <div class="hgj_btns">
+            <button class="hgj_btn hgj_btn-run" id="hgj_runBtn">⚡ 启动并行流水线</button>
+            <button class="hgj_btn" id="hgj_serialBtn">🔁 启动串行（对比）</button>
+            <button class="hgj_btn hgj_btn-stop" id="hgj_abortBtn" disabled>■ 取消 (Abort)</button>
         </div>
     </div>
 
-    <div class="hgj_main">
-        <!-- 左：动画厨房 + 任务进度 -->
+    <div class="hgj_grid">
+        <!-- ============ 左：厨房 + 任务进度 ============ -->
         <div>
-            <!-- 动画厨房 -->
-            <div class="hgj_scene">
-                <div class="hgj_scene-title">🍳 动画厨房 · 工人实时移动</div>
-                <div class="hgj_kitchen" id="hgj_kitchen">
-                    <div class="hgj_station" data-pos="buy">🛒</div>
-                    <div class="hgj_station" data-pos="dough">🍞</div>
-                    <div class="hgj_station" data-pos="filling">🥬</div>
-                    <div class="hgj_station" data-pos="wrap">🥟</div>
-                    <div class="hgj_station" data-pos="eat">😋</div>
-                    <div class="hgj_counter"></div>
-                    <div class="hgj_dumplings" id="hgj_dumplings"></div>
-                    <div class="hgj_worker" id="hgj_worker">🧑‍🍳</div>
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">🍳 实时动画厨房（双工人并行）</div>
+                    <div class="hgj_panel-time">⏱ <span id="hgj_timer">0.0</span>s</div>
                 </div>
-                <div class="hgj_timer-row">
-                    <span>⏱ 经过时间</span>
-                    <b id="hgj_timer">0.0</b>
-                    <span>秒</span>
-                    <small>（点击按钮开始）</small>
-                </div>
-            </div>
+                <div class="hgj_panel-body">
+                    <div class="hgj_kitchen" id="hgj_kitchen">
+                        <!-- SVG 连线 -->
+                        <svg class="hgj_pipes" viewBox="0 0 1000 220" preserveAspectRatio="none" id="hgj_pipes">
+                            <!-- 买→和面 -->
+                            <path id="hgj_pipe-buy-dough" d="M 100 170 Q 160 100, 280 170" stroke="#f97316" class="hgj_pipe-flow" style="opacity:0"/>
+                            <!-- 买→和馅 -->
+                            <path id="hgj_pipe-buy-filling" d="M 100 170 Q 200 60, 480 170" stroke="#f97316" class="hgj_pipe-flow" style="opacity:0"/>
+                            <!-- Promise.all 汇合 -->
+                            <path id="hgj_pipe-parallel" d="M 280 170 L 380 120 L 480 170" stroke="#ec4899" class="hgj_pipe-flow" style="opacity:0"/>
+                            <!-- 汇合→包饺子 -->
+                            <path id="hgj_pipe-wrap" d="M 380 120 Q 540 70, 680 170" stroke="#f97316" class="hgj_pipe-flow" style="opacity:0"/>
+                            <!-- 包→吃 -->
+                            <path id="hgj_pipe-eat" d="M 680 170 Q 780 100, 870 170" stroke="#f97316" class="hgj_pipe-flow" style="opacity:0"/>
+                        </svg>
 
-            <!-- 任务进度条 -->
-            <div class="hgj_tasks">
-                <div id="hgj_tasksBox"></div>
+                        <!-- 工位 -->
+                        <div class="hgj_station" data-pos="buy">
+                            <div class="hgj_light" data-light="buy"></div>🛒
+                            <span class="hgj_label">买原料</span>
+                        </div>
+                        <div class="hgj_station" data-pos="dough">
+                            <div class="hgj_light" data-light="dough"></div>🍞
+                            <span class="hgj_label">和面</span>
+                        </div>
+                        <div class="hgj_station" data-pos="filling">
+                            <div class="hgj_light" data-light="filling"></div>🥬
+                            <span class="hgj_label">和馅</span>
+                        </div>
+                        <div class="hgj_station" data-pos="wrap">
+                            <div class="hgj_light" data-light="wrap"></div>🥟
+                            <span class="hgj_label">包饺子</span>
+                        </div>
+                        <div class="hgj_station" data-pos="eat">
+                            <div class="hgj_light" data-light="eat"></div>😋
+                            <span class="hgj_label">吃饺子</span>
+                        </div>
+
+                        <!-- 碗/锅 -->
+                        <div class="hgj_bowl" data-for="buy">🧺</div>
+                        <div class="hgj_bowl" data-for="dough">🥣</div>
+                        <div class="hgj_bowl" data-for="filling">🍲</div>
+                        <div class="hgj_bowl" data-for="wrap">🧧</div>
+
+                        <div class="hgj_counter"></div>
+                        <div class="hgj_particles" id="hgj_particles"></div>
+                        <div class="hgj_dumplings" id="hgj_dumplings"></div>
+                        <div class="hgj_toast" id="hgj_toast">✨ 原料已到位！</div>
+
+                        <!-- 工人 A（主工人，负责串行步骤） -->
+                        <div class="hgj_worker" id="hgj_workerA">👨‍🍳</div>
+                        <!-- 工人 B（并行工人） -->
+                        <div class="hgj_worker" id="hgj_workerB" style="opacity:0">👩‍🍳</div>
+                    </div>
+
+                    <!-- 任务状态卡 -->
+                    <div class="hgj_tasks" id="hgj_tasks"></div>
+                </div>
             </div>
         </div>
 
-        <!-- 右：甘特图 + 代码面板 -->
-        <div>
-            <!-- 结果横幅 -->
-            <div class="hgj_result" id="hgj_result">
-                <div><div class="hgj_result-num" id="hgj_resultTime">0.0s</div><div class="hgj_result-label" id="hgj_resultMode">总耗时</div></div>
-                <div class="hgj_result-save" id="hgj_resultSave">🎉 并行模式节省约 3s！</div>
+        <!-- ============ 右：状态 + Console + 甘特 ============ -->
+        <div class="hgj_right">
+            <!-- Promise 状态 JSON -->
+            <div class="hgj_panel">
+                <div class="hgj_panel-head"><div class="hgj_panel-title">🔮 Promise 状态机</div><div class="hgj_panel-time">实时 state</div></div>
+                <div class="hgj_panel-body">
+                    <pre class="hgj_state-json" id="hgj_stateJson">{
+  buy:        <span class="pending">'pending'</span>,
+  dough:      <span class="pending">'pending'</span>,
+  filling:    <span class="pending">'pending'</span>,
+  wrap:       <span class="pending">'pending'</span>,
+  eat:        <span class="pending">'pending'</span>
+}</pre>
+                </div>
+            </div>
+
+            <!-- Console -->
+            <div class="hgj_panel">
+                <div class="hgj_panel-head"><div class="hgj_panel-title">📜 Console 日志</div><div class="hgj_panel-time">console.log()</div></div>
+                <div class="hgj_panel-body">
+                    <div class="hgj_console" id="hgj_console"><div><span class="hgj_ts">[准备]</span> <span class="hgj_log-info">点击上方按钮启动流水线</span></div></div>
+                </div>
             </div>
 
             <!-- 甘特图 -->
-            <div class="hgj_gantt">
-                <h2>📊 流水线时间轴</h2>
-                <div id="hgj_ganttBox"></div>
-                <div class="hgj_legend">
-                    <span><i style="background:#f97316"></i> 串行步骤</span>
-                    <span><i style="background:#ec4899"></i> 并行步骤</span>
-                    <span><i style="background:repeating-linear-gradient(45deg,#ec4899 0 6px,#db2777 6px 12px)"></i> Promise.all</span>
+            <div class="hgj_panel">
+                <div class="hgj_panel-head"><div class="hgj_panel-title">📊 甘特图（时间轴）</div><div class="hgj_panel-time">0 / 20s</div></div>
+                <div class="hgj_panel-body">
+                    <div id="hgj_ganttBox"></div>
                 </div>
-            </div>
-
-            <!-- 代码面板 -->
-            <div class="hgj_code" style="margin-top:1.25rem">
-<span class="hgj_c-cmt">// ======= 核心代码 =======</span>
-<span class="hgj_c-kw">async function</span> <span class="hgj_c-fn">makeDumplings</span>() {
-    <span class="hgj_c-kw">await</span> <span class="hgj_c-fn">buy</span>();                 <span class="hgj_c-cmt">// 6s，必须先买</span>
-
-    <span class="hgj_c-kw">await</span> <span class="hgj_c-hi">Promise</span>.<span class="hgj_c-fn">all</span>([
-        <span class="hgj_c-fn">makeDough</span>(),      <span class="hgj_c-cmt">// 3s</span>
-        <span class="hgj_c-fn">makeFilling</span>()    <span class="hgj_c-cmt">// 4s</span>
-    ]);                                <span class="hgj_c-cmt">// ↑ 取最长者 4s</span>
-
-    <span class="hgj_c-kw">await</span> <span class="hgj_c-fn">wrap</span>();               <span class="hgj_c-cmt">// 5s</span>
-    <span class="hgj_c-kw">await</span> <span class="hgj_c-fn">eat</span>();                <span class="hgj_c-cmt">// 2s</span>
-}
-<span class="hgj_c-cmt">// 总耗时：6 + max(3,4) + 5 + 2 = 17s</span>
-<span class="hgj_c-cmt">// 串行   ：6 + 3 + 4 + 5 + 2    = 20s  ← 多 3 秒</span>
             </div>
         </div>
     </div>
+
+    <!-- 底部统计 -->
+    <div class="hgj_statusbar">
+        <div class="hgj_statbox"><div class="hgj_num" id="hgj_statTotal">0.0s</div><div class="hgj_lbl">总耗时</div></div>
+        <div class="hgj_statbox hgj-par"><div class="hgj_num" id="hgj_statMode">串行</div><div class="hgj_lbl">当前模式</div></div>
+        <div class="hgj_statbox hgj-saved"><div class="hgj_num" id="hgj_statSaved">—</div><div class="hgj_lbl">节省时间</div></div>
+        <div class="hgj_statbox hgj-work"><div class="hgj_num" id="hgj_statRounds">0</div><div class="hgj_lbl">运行次数</div></div>
+    </div>
+</div>
+
+<!-- 结果横幅 -->
+<div class="hgj_result" id="hgj_result">
+    <h3>🎉 流水线完成！</h3>
+    <b id="hgj_resultNum">17.0s</b>
+    <small id="hgj_resultTip">比串行节省约 3 秒 · 用 Promise.all 让两个任务并行</small>
+    <button id="hgj_resultClose">再来一次</button>
 </div>
 
 <script>
 (function(){
-    // ===== 任务定义 =====
+    // ===== 数据 =====
     const Hgj_TASKS = [
-        { key:'buy',     name:'🛒 买原料',   color:'#f97316', duration:6000, parallel:false },
-        { key:'dough',   name:'🍞 和面',     color:'#ec4899', duration:3000, parallel:true  },
-        { key:'filling', name:'🥬 和馅',     color:'#ec4899', duration:4000, parallel:true  },
-        { key:'wrap',    name:'🥟 包饺子',   color:'#f97316', duration:5000, parallel:false },
-        { key:'eat',     name:'😋 吃饺子',   color:'#f97316', duration:2000, parallel:false },
+        { key:'buy',     name:'🛒 买原料',   duration:6000, c1:'#f97316', c2:'#fb923c', parallel:false },
+        { key:'dough',   name:'🍞 和面',     duration:3000, c1:'#ec4899', c2:'#f472b6', parallel:true  },
+        { key:'filling', name:'🥬 和馅',     duration:4000, c1:'#ec4899', c2:'#f472b6', parallel:true  },
+        { key:'wrap',    name:'🥟 包饺子',   duration:5000, c1:'#f97316', c2:'#fb923c', parallel:false },
+        { key:'eat',     name:'😋 吃饺子',   duration:2000, c1:'#f97316', c2:'#fb923c', parallel:false },
     ];
-    const hgj_totalSerial = Hgj_TASKS.reduce((s,t)=>s+t.duration,0);
-    const hgj_totalParallel = 6000 + Math.max(3000,4000) + 5000 + 2000; // 17000ms
+    const hgj_SERIAL_TOTAL = Hgj_TASKS.reduce((s,t)=>s+t.duration,0); // 20000
+    const hgj_PARALLEL_TOTAL = 6000+Math.max(3000,4000)+5000+2000;     // 17000
 
-    const hgj_worker=document.getElementById('hgj_worker');
-    const hgj_kitchen=document.getElementById('hgj_kitchen');
-    const hgj_dumplings=document.getElementById('hgj_dumplings');
-    const hgj_timer=document.getElementById('hgj_timer');
-    const hgj_tasksBox=document.getElementById('hgj_tasksBox');
-    const hgj_ganttBox=document.getElementById('hgj_ganttBox');
-    const hgj_result=document.getElementById('hgj_result');
+    // ===== DOM =====
+    const $ = id=>document.getElementById(id);
+    const hgj_kitchen=$('hgj_kitchen'), hgj_bg=$('hgj_bg');
+    const hgj_workA=$('hgj_workerA'), hgj_workB=$('hgj_workerB');
+    const hgj_tasksBox=$('hgj_tasks'), hgj_console=$('hgj_console');
+    const hgj_stateJson=$('hgj_stateJson'), hgj_ganttBox=$('hgj_ganttBox');
+    const hgj_timer=$('hgj_timer'), hgj_particles=$('hgj_particles');
+    const hgj_dumplings=$('hgj_dumplings'), hgj_toast=$('hgj_toast');
+    const hgj_runBtn=$('hgj_runBtn'), hgj_serialBtn=$('hgj_serialBtn'), hgj_abortBtn=$('hgj_abortBtn');
 
-    // 初始化任务进度条 + 甘特图
+    let hgj_state={};
+    let hgj_rounds=0;
+    let hgj_abortCtrl=null;
+    let hgj_timerIv=null;
+    let hgj_isRunning=false;
+
+    // ===== 初始化 =====
     function hgj_init(){
         hgj_tasksBox.innerHTML='';
+        hgj_ganttBox.innerHTML='';
+        Object.keys(hgj_state={}).length=0;
+        Hgj_TASKS.forEach(t=>{ hgj_state[t.key]='pending'; });
+        hgj_updateState();
+
         Hgj_TASKS.forEach(t=>{
-            const div=document.createElement('div');
-            div.className='hgj_task';
-            div.id='hgj_t_'+t.key;
-            div.innerHTML='<div class="hgj_task-head"><span class="hgj_task-name">'+t.name+' <span class="hgj_done-check">✅</span></span>'+
-                '<span class="hgj_task-status" id="hgj_ts_'+t.key+'">等待中…</span></div>'+
-                '<div class="hgj_task-bar"><div class="hgj_task-fill'+(t.parallel?' hgj_parallel':'')+'" id="hgj_tb_'+t.key+'" style="--c:'+t.color+'"></div></div>';
-            hgj_tasksBox.appendChild(div);
+            const el=document.createElement('div');
+            el.className='hgj_task';
+            el.id='hgj_task_'+t.key;
+            el.innerHTML='<div class="hgj_task-head">'+
+                '<span class="hgj_task-name"><span class="hgj_task-lamp"></span>'+t.name+(t.parallel?' <span style="color:#ec4899;font-size:.65rem">[并行]</span>':'')+'</span>'+
+                '<span class="hgj_task-status" id="hgj_status_'+t.key+'">pending</span></div>'+
+                '<div class="hgj_task-bar"><div class="hgj_task-fill'+(t.parallel?' hgj_parallel':'')+'" id="hgj_fill_'+t.key+'" style="--c:'+t.c1+';--c2:'+t.c2+'"></div></div>';
+            hgj_tasksBox.appendChild(el);
         });
 
-        hgj_ganttBox.innerHTML='';
+        // 甘特图
         Hgj_TASKS.forEach(t=>{
             const row=document.createElement('div');
             row.className='hgj_gantt-row';
             row.innerHTML='<div class="hgj_gantt-name">'+t.key+'</div>'+
-                '<div class="hgj_gantt-track"><div class="hgj_gantt-bar '+(t.parallel?'hgj_par':'hgj_seq')+'" id="hgj_g_'+t.key+'" style="left:0;width:0;background:'+t.color+'00">'+t.key+'</div></div>';
+                '<div class="hgj_gantt-track"><div class="hgj_gantt-bar '+(t.parallel?'hgj_par':'hgj_seq')+'" id="hgj_g_'+t.key+'" style="width:0;background:'+t.c1+'">'+t.key+'</div></div>';
             hgj_ganttBox.appendChild(row);
         });
-        // 时间轴刻度
+        // 甘特光标
+        const cursor=document.createElement('div');
+        cursor.className='hgj_cursor';
+        cursor.id='hgj_gCursor';
+        cursor.style.left='0%';
+        const track=document.createElement('div');
+        track.className='hgj_gantt-track'; track.style.marginTop='0';
+        track.appendChild(cursor);
+        hgj_ganttBox.appendChild(track);
+        // 时间轴
         const axis=document.createElement('div');
         axis.className='hgj_time-axis';
-        for(let i=0;i<=20;i+=5){
-            const s=document.createElement('span');
-            s.textContent=i+'s';
-            s.style.left=(i/20*100)+'%';
-            axis.appendChild(s);
-        }
+        for(let i=0;i<=20;i+=5){const s=document.createElement('span');s.textContent=i+'s';s.style.left=(i/20*100)+'%';axis.appendChild(s);}
         hgj_ganttBox.appendChild(axis);
 
+        // 工位灯重置
+        hgj_kitchen.querySelectorAll('.hgj_light').forEach(l=>{l.className='hgj_light'});
+        hgj_kitchen.querySelectorAll('.hgj_station').forEach(s=>{s.classList.remove('hgj_active','hgj_done')});
+        hgj_kitchen.querySelectorAll('.hgj_bowl').forEach(b=>{b.classList.remove('hgj_full');b.style.opacity='.35'});
+        // SVG 管道隐藏
+        document.querySelectorAll('.hgj_pipe-flow').forEach(p=>{p.style.opacity='0'});
+        hgj_particles.innerHTML='';
         hgj_dumplings.innerHTML='';
-        hgj_result.classList.remove('hgj_show');
-        hgj_worker.className='hgj_worker';
-        hgj_worker.style.left='-40px';
-        hgj_kitchen.querySelectorAll('.hgj_station').forEach(s=>s.classList.remove('hgj_active','hgj_done'));
+        // 工人回位
+        hgj_workA.className='hgj_worker'; hgj_workA.style.left='-40px';
+        hgj_workB.className='hgj_worker'; hgj_workB.style.left='-40px'; hgj_workB.style.opacity='0';
+        hgj_console.innerHTML='<div><span class="hgj_ts">[reset]</span> <span class="hgj_log-info">状态已重置，等待新流水线...</span></div>';
+        hgj_toast.classList.remove('hgj_show');
+        hgj_timer.textContent='0.0';
     }
 
-    function hgj_moveWorker(station){
-        hgj_worker.className='hgj_worker hgj-at-'+station;
+    // ===== Promise 状态渲染 =====
+    function hgj_updateState(){
+        let html='{\n';
+        Object.keys(hgj_state).forEach(k=>{
+            const v=hgj_state[k];
+            const cls=v==='pending'?'pending':v==='running'?'run':v==='done'?'done':'rej';
+            html+='  <span class="k">'+k.padEnd(10)+'</span>: <span class="'+cls+'">\''+v+'\'</span>,\n';
+        });
+        html+='}';
+        hgj_stateJson.innerHTML=html;
     }
-    function hgj_setStationActive(pos){
-        hgj_kitchen.querySelectorAll('.hgj_station').forEach(s=>{
-            s.classList.toggle('hgj_active', s.dataset.pos===pos);
+
+    // ===== Console =====
+    function hgj_consoleLog(level,msg){
+        const ts=new Date().toLocaleTimeString('zh-CN',{hour12:false});
+        const d=document.createElement('div');
+        d.innerHTML='<span class="hgj_ts">['+ts+']</span> <span class="hgj_log-'+level+'">'+msg+'</span>';
+        hgj_console.appendChild(d);
+        hgj_console.scrollTop=hgj_console.scrollHeight;
+    }
+
+    // ===== 粒子烟花 =====
+    function hgj_burst(xPct,yPct,color){
+        const box=hgj_kitchen.getBoundingClientRect();
+        const cx=box.width*xPct/100, cy=box.height*yPct/100;
+        for(let i=0;i<24;i++){
+            const d=document.createElement('div');
+            d.style.left=cx+'px'; d.style.top=cy+'px';
+            const a=Math.random()*Math.PI*2, r=40+Math.random()*50;
+            d.style.setProperty('--tx',Math.cos(a)*r+'px');
+            d.style.setProperty('--ty',Math.sin(a)*r+'px');
+            d.style.background=color;
+            d.style.boxShadow='0 0 6px '+color;
+            d.style.width=d.style.height=(3+Math.random()*4)+'px';
+            hgj_particles.appendChild(d);
+            setTimeout(()=>d.remove(),1100);
+        }
+    }
+
+    // ===== Toast =====
+    function hgj_toast(text){
+        hgj_toast.textContent=text;
+        hgj_toast.classList.add('hgj_show');
+        clearTimeout(hgj_toast._t);
+        hgj_toast._t=setTimeout(()=>hgj_toast.classList.remove('hgj_show'),1600);
+    }
+
+    // ===== 工人移动 =====
+    function hgj_moveWorker(who,where){
+        const w=who==='A'?hgj_workA:hgj_workB;
+        w.className='hgj_worker hgj-at-'+where;
+    }
+
+    function hgj_setLight(key,state){
+        const l=hgj_kitchen.querySelector('.hgj_light[data-light="'+key+'"]');
+        if(l) l.className='hgj_light hgj_'+state;
+        const s=hgj_kitchen.querySelector('.hgj_station[data-pos="'+key+'"]');
+        if(s){
+            s.classList.toggle('hgj_active', state==='running');
+            s.classList.toggle('hgj_done', state==='done');
+        }
+        const b=hgj_kitchen.querySelector('.hgj_bowl[data-for="'+key+'"]');
+        if(b){
+            b.classList.toggle('hgj_full', state==='done');
+            b.style.opacity = state==='done'?'1':(state==='running'?'.85':'.35');
+        }
+    }
+
+    function hgj_setPipe(id, on){
+        const p=document.getElementById(id);
+        if(p) p.style.opacity = on?'1':'0';
+    }
+
+    // ===== 背景粒子 =====
+    (function(){
+        const colors=['#f97316','#ec4899','#8b5cf6','#22d3ee','#22c55e'];
+        for(let i=0;i<30;i++){
+            const s=document.createElement('span');
+            const sz=3+Math.random()*12;
+            s.style.cssText='left:'+Math.random()*100+'%;width:'+sz+'px;height:'+sz+'px;animation-duration:'+(6+Math.random()*10)+'s;animation-delay:'+(Math.random()*10)+'s;background:radial-gradient(circle,'+colors[Math.floor(Math.random()*colors.length)]+'40,transparent 70%)';
+            hgj_bg.appendChild(s);
+        }
+    })();
+
+    // ===== Promise Abort =====
+    function hgj_sleep(ms,signal){
+        return new Promise((resolve,reject)=>{
+            if(signal&&signal.aborted){reject(new Error('aborted'));return;}
+            const t=setTimeout(resolve,ms);
+            if(signal){ signal.addEventListener('abort',()=>{clearTimeout(t);reject(new Error('aborted'));}); }
         });
     }
-    function hgj_setStationDone(pos){
-        const el=hgj_kitchen.querySelector('.hgj_station[data-pos="'+pos+'"]');
-        if(el){ el.classList.remove('hgj_active'); el.classList.add('hgj_done'); }
+
+    // ===== 单个任务执行 =====
+    function hgj_runTask(t, startRatio, worker, signal){
+        return new Promise(async (resolve,reject)=>{
+            try{
+                hgj_state[t.key]='running'; hgj_updateState();
+                hgj_moveWorker(worker,t.key);
+                hgj_setLight(t.key,'running');
+                $('hgj_task_'+t.key).classList.add('hgj_run');
+                $('hgj_status_'+t.key).textContent='running';
+
+                const gantt=$('hgj_g_'+t.key);
+                const fill=$('hgj_fill_'+t.key);
+                const ganttStartRatio=startRatio/20; // max 20s
+                gantt.style.left=(ganttStartRatio*100)+'%';
+                gantt.style.width='0%';
+
+                const t0=Date.now();
+                const iv=setInterval(()=>{
+                    if(signal&&signal.aborted){ clearInterval(iv); reject(new Error('aborted')); return; }
+                    const p=Math.min(1,(Date.now()-t0)/t.duration);
+                    fill.style.width=(p*100)+'%';
+                    gantt.style.width=(p*(t.duration/1000)/20*100)+'%';
+                },30);
+
+                await hgj_sleep(t.duration, signal);
+                clearInterval(iv);
+
+                // 完成
+                hgj_state[t.key]='done'; hgj_updateState();
+                hgj_setLight(t.key,'done');
+                $('hgj_task_'+t.key).classList.remove('hgj_run');
+                $('hgj_task_'+t.key).classList.add('hgj_done');
+                $('hgj_status_'+t.key).textContent='✅ done ('+(t.duration/1000)+'s)';
+                hgj_consoleLog('resolve','✓ '+t.name+' resolved');
+                hgj_burst(10+[7,28,48,68,87][Hgj_TASKS.indexOf(t)]*0.9,70,t.c1);
+
+                // 特殊效果
+                if(t.key==='wrap'){
+                    for(let i=0;i<8;i++){setTimeout(()=>hgj_dumpling(70+Math.random()*15),i*300);}
+                }
+                resolve({name:t.key});
+            }catch(e){ reject(e); }
+        });
     }
-    function hgj_emitDumpling(){
+
+    function hgj_dumpling(xPct){
         const d=document.createElement('div');
         d.className='hgj_dumpling';
         d.textContent='🥟';
-        d.style.left=70+Math.random()*20+'%';
-        d.style.animationDuration=(1.5+Math.random()*1)+'s';
+        d.style.left=xPct+'%';
+        d.style.animationDuration=(1.4+Math.random()*1)+'s';
         hgj_dumplings.appendChild(d);
-        setTimeout(()=>d.remove(),2500);
+        setTimeout(()=>d.remove(),2600);
     }
 
-    // ===== 执行单个任务 =====
-    function hgj_runTask(t, startRatio){
-        return new Promise(resolve=>{
-            const fill=document.getElementById('hgj_tb_'+t.key);
-            const status=document.getElementById('hgj_ts_'+t.key);
-            const taskEl=document.getElementById('hgj_t_'+t.key);
-            const gantt=document.getElementById('hgj_g_'+t.key);
-            const maxDuration=Math.max(hgj_totalSerial,hgj_totalParallel);
-            const ganttStart = (startRatio||0) * 100 / 20; // 20s max
-            const ganttWidth = (t.duration/1000) * 100 / 20;
-
-            // 甘特图定位
-            gantt.style.left=ganttStart+'%';
-            gantt.style.width=ganttWidth+'%';
-            gantt.style.background=t.color;
-
-            taskEl.classList.add('hgj_run');
-            status.textContent='进行中…';
-            hgj_moveWorker(t.key);
-            hgj_setStationActive(t.key);
-
-            const t0=Date.now();
-            const iv=setInterval(()=>{
-                const p=Math.min(1,(Date.now()-t0)/t.duration);
-                fill.style.width=(p*100)+'%';
-            },30);
-            setTimeout(()=>{
-                clearInterval(iv);
-                fill.style.width='100%';
-                taskEl.classList.remove('hgj_run');
-                taskEl.classList.add('hgj_done');
-                status.textContent='✓ 完成 ('+(t.duration/1000)+'s)';
-                hgj_setStationDone(t.key);
-                resolve();
-            },t.duration);
-        });
+    // ===== 甘特光标 =====
+    function hgj_ganttCursor(totalMs){
+        const cursor=$('hgj_gCursor');
+        const t0=Date.now();
+        const iv=setInterval(()=>{
+            if(!hgj_isRunning){ clearInterval(iv); return; }
+            const pct=Math.min(100,(Date.now()-t0)/totalMs*100);
+            cursor.style.left=pct+'%';
+        },50);
     }
 
-    function hgj_sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-
-    // ===== 主流程：并行版 =====
+    // ===== 主流程 =====
     async function hgj_runParallel(){
-        hgj_init();
-        const t0=Date.now();
-        // 计时器
-        const timerEl=document.getElementById('hgj_timer');
-        const timerIv=setInterval(()=>{
-            timerEl.textContent=((Date.now()-t0)/1000).toFixed(1);
-        },100);
-
-        await hgj_runTask(Hgj_TASKS[0], 0);                         // buy
-        hgj_moveWorker('dough');
-        await Promise.all([
-            hgj_runTask(Hgj_TASKS[1], 6/20),                       // dough @ 6s
-            hgj_runTask(Hgj_TASKS[2], 6/20)                        // filling @ 6s
-        ]);
-        // 包饺子时产出饺子
-        const wrapPromise = hgj_runTask(Hgj_TASKS[3], 10/20);
-        const wrapStart=Date.now();
-        const dumplingIv=setInterval(()=>{
-            if(Date.now()-wrapStart > 5000){ clearInterval(dumplingIv); return; }
-            hgj_emitDumpling();
-        },400);
-        await wrapPromise;
-        await hgj_runTask(Hgj_TASKS[4], 15/20);                    // eat @ 15s
-
-        clearInterval(timerIv);
-        const total=((Date.now()-t0)/1000).toFixed(1);
-        hgj_resultTime.textContent=total+'s';
-        hgj_resultMode.textContent='⚡ 并行模式';
-        hgj_resultSave.textContent='🎉 比串行节省约 '+(20-parseFloat(total)).toFixed(1)+' 秒！';
-        hgj_result.classList.add('hgj_show');
+        await hgj_runFlow(true);
     }
-
-    // ===== 主流程：串行版 =====
     async function hgj_runSerial(){
-        hgj_init();
-        const t0=Date.now();
-        const timerEl=document.getElementById('hgj_timer');
-        const timerIv=setInterval(()=>{ timerEl.textContent=((Date.now()-t0)/1000).toFixed(1); },100);
+        await hgj_runFlow(false);
+    }
+    async function hgj_runFlow(isParallel){
+        if(hgj_isRunning) return;
+        hgj_isRunning=true;
+        hgj_rounds++;
+        hgj_runBtn.disabled=hgj_serialBtn.disabled=true;
+        hgj_abortBtn.disabled=false;
+        hgj_abortCtrl=new AbortController();
+        const signal=hgj_abortCtrl.signal;
 
-        let acc=0;
-        for(let i=0;i<Hgj_TASKS.length;i++){
-            const t=Hgj_TASKS[i];
-            await hgj_runTask(t, acc/1000/20);
-            acc+=t.duration;
+        hgj_init();
+        hgj_consoleLog('info','=== 流水线启动 ===');
+        hgj_consoleLog('info','模式：'+(isParallel?'⚡ Promise.all 并行':'🔁 纯串行'));
+        hgj_consoleLog('info','预计耗时：'+(isParallel?'17s (优化)':'20s (基准)'));
+        hgj_consoleLog('par','worker B 已待命，等待并行任务派发...');
+
+        const t0=Date.now();
+        hgj_timer.textContent='0.0';
+        hgj_timerIv=setInterval(()=>{ hgj_timer.textContent=((Date.now()-t0)/1000).toFixed(1); },100);
+        hgj_ganttCursor(isParallel?hgj_PARALLEL_TOTAL:hgj_SERIAL_TOTAL);
+
+        try{
+            // ==== buy ====
+            hgj_setPipe('hgj_pipe-buy-dough',true);
+            hgj_setPipe('hgj_pipe-buy-filling',true);
+            await hgj_runTask(Hgj_TASKS[0], 0, 'A', signal);
+
+            hgj_toast('✨ 原料已到位！');
+            hgj_consoleLog('complete','买原料完成，worker B 上线！');
+            hgj_workB.style.opacity='1';
+
+            if(isParallel){
+                // ==== parallel: dough + filling ====
+                hgj_setPipe('hgj_pipe-parallel',true);
+                const tDough  = hgj_runTask(Hgj_TASKS[1], 6, 'B', signal);
+                const tFilling= hgj_runTask(Hgj_TASKS[2], 6, 'A', signal);
+                hgj_consoleLog('par','🥣 Promise.all([和面, 和馅]) 两个 Promise 同时 pending');
+                const [rDough,rFilling]=await Promise.all([tDough,tFilling]);
+                hgj_consoleLog('complete','Promise.all 全部 settled！取最长者 4s');
+            }else{
+                await hgj_runTask(Hgj_TASKS[1], 6, 'B', signal);
+                await hgj_runTask(Hgj_TASKS[2], 9, 'A', signal);
+            }
+
+            hgj_setPipe('hgj_pipe-wrap',true);
+            hgj_toast('👌 准备包饺子...');
+
+            // ==== wrap ====
+            await hgj_runTask(Hgj_TASKS[3], isParallel?10:13, 'A', signal);
+
+            hgj_setPipe('hgj_pipe-eat',true);
+
+            // ==== eat ====
+            await hgj_runTask(Hgj_TASKS[4], isParallel?15:18, 'B', signal);
+
+            clearInterval(hgj_timerIv);
+            const total=((Date.now()-t0)/1000).toFixed(1);
+            hgj_consoleLog('complete','=== 流水线全部完成！总耗时 '+total+'s ===');
+
+            // 底部统计
+            $('hgj_statTotal').textContent=total+'s';
+            $('hgj_statMode').textContent=isParallel?'并行':'串行';
+            $('hgj_statRounds').textContent=hgj_rounds;
+            $('hgj_statSaved').textContent=isParallel?'≈3.0s':'0s';
+
+            // 结果弹窗
+            const r=$('hgj_result');
+            $('hgj_resultNum').textContent=total+'s';
+            $('hgj_resultTip').textContent=isParallel
+                ? '✅ 用 Promise.all 让和面 & 和馅并行，省了约 3 秒！'
+                : '💡 若用 Promise.all 可再省约 3 秒';
+            r.classList.add('hgj_show');
+
+        }catch(e){
+            clearInterval(hgj_timerIv);
+            if(e.message==='aborted'){
+                hgj_consoleLog('err','🛑 用户取消了流水线（AbortController.abort()）');
+                hgj_toast('🛑 已取消');
+            }else{
+                hgj_consoleLog('err','❌ 错误：'+e.message);
+            }
+            hgj_kitchen.querySelectorAll('.hgj_light').forEach(l=>{if(l.classList.contains('hgj_running')) l.className='hgj_light hgj_rej';});
+        }finally{
+            hgj_isRunning=false;
+            hgj_runBtn.disabled=hgj_serialBtn.disabled=false;
+            hgj_abortBtn.disabled=true;
         }
-        clearInterval(timerIv);
-        const total=((Date.now()-t0)/1000).toFixed(1);
-        hgj_resultTime.textContent=total+'s';
-        hgj_resultMode.textContent='🔁 串行模式';
-        hgj_resultSave.textContent='💡 若用 Promise.all 可省约 3 秒';
-        hgj_result.classList.add('hgj_show');
     }
 
-    document.getElementById('hgj_parallelBtn').onclick=hgj_runParallel;
-    document.getElementById('hgj_serialBtn').onclick=hgj_runSerial;
+    hgj_runBtn.onclick=hgj_runParallel;
+    hgj_serialBtn.onclick=hgj_runSerial;
+    hgj_abortBtn.onclick=()=>{ if(hgj_abortCtrl) hgj_abortCtrl.abort(); };
+    $('hgj_resultClose').onclick=()=>$('hgj_result').classList.remove('hgj_show');
 
-    // 自动跑一次并行
-    setTimeout(hgj_runParallel,400);
+    // 自动跑一次
+    setTimeout(hgj_runParallel,500);
 })();
 </script>
 </body>
