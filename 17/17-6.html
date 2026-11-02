@@ -452,7 +452,7 @@ body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#0b0f1a;colo
     }
 
     // ===== Toast =====
-    function hgj_toast(text){
+    function hgj_showToast(text){
         hgj_toast.textContent=text;
         hgj_toast.classList.add('hgj_show');
         clearTimeout(hgj_toast._t);
@@ -604,7 +604,7 @@ body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#0b0f1a;colo
             hgj_setPipe('hgj_pipe-buy-filling',true);
             await hgj_runTask(Hgj_TASKS[0], 0, 'A', signal);
 
-            hgj_toast('✨ 原料已到位！');
+            hgj_showToast('✨ 原料已到位！');
             hgj_consoleLog('complete','买原料完成，worker B 上线！');
             hgj_workB.style.opacity='1';
 
@@ -622,7 +622,7 @@ body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#0b0f1a;colo
             }
 
             hgj_setPipe('hgj_pipe-wrap',true);
-            hgj_toast('👌 准备包饺子...');
+            hgj_showToast('👌 准备包饺子...');
 
             // ==== wrap ====
             await hgj_runTask(Hgj_TASKS[3], isParallel?10:13, 'A', signal);
@@ -654,7 +654,7 @@ body{font-family:"Microsoft YaHei","Segoe UI",sans-serif;background:#0b0f1a;colo
             clearInterval(hgj_timerIv);
             if(e.message==='aborted'){
                 hgj_consoleLog('err','🛑 用户取消了流水线（AbortController.abort()）');
-                hgj_toast('🛑 已取消');
+                hgj_showToast('🛑 已取消');
             }else{
                 hgj_consoleLog('err','❌ 错误：'+e.message);
             }
