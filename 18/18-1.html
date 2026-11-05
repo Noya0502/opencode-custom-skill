@@ -3,118 +3,111 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>18-1 3D 粒子文字 · 胡国静</title>
-<!-- 姓名：胡国静，日期：18-1 3D粒子文字消散效果 -->
+<title>18-1 3D 沙化粒子文字 · 胡国静</title>
+<!-- 姓名：胡国静，日期：18-1 全屏3D沙化粒子文字 -->
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
     body {
         font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
-        background: #06070a;
+        background: #05060a;
         color: #e7e5e4;
-        display: flex; flex-direction: column;
-        min-height: 100vh; overflow-x: hidden;
-        --hgj_glow-1: rgba(245,194,107,0.16);
-        --hgj_glow-2: rgba(253,230,138,0.10);
-        --hgj_glow-3: rgba(217,154,60,0.10);
-        transition: background 0.6s ease;
+        height: 100vh; overflow: hidden;
+        cursor: crosshair;
+        --hgj_g1: rgba(245,194,107,0.16);
+        --hgj_g2: rgba(253,230,138,0.09);
+        --hgj_g3: rgba(201,143,60,0.10);
+        transition: background 0.7s ease;
     }
 
-    /* 背景：墨色 + 暖金柔光 + 细颗粒 */
+    /* ===== 背景光晕层 ===== */
     .hgj_bg {
         position: fixed; inset: 0; z-index: 0; pointer-events: none;
         background:
-            radial-gradient(55% 45% at 50% 40%, var(--hgj_glow-1) 0%, transparent 68%),
-            radial-gradient(42% 38% at 14% 10%, var(--hgj_glow-2) 0%, transparent 72%),
-            radial-gradient(46% 42% at 88% 92%, var(--hgj_glow-3) 0%, transparent 72%),
-            #06070a;
-        transition: background 0.6s ease;
-    }
-    .hgj_bg::after {
-        content: ''; position: absolute; inset: 0; opacity: 0.5;
-        background-image: radial-gradient(rgba(255,255,255,0.045) 0.6px, transparent 0.7px);
-        background-size: 3px 3px;
-        mix-blend-mode: soft-light;
+            radial-gradient(58% 48% at 50% 44%, var(--hgj_g1) 0%, transparent 70%),
+            radial-gradient(38% 34% at 12% 8%, var(--hgj_g2) 0%, transparent 74%),
+            radial-gradient(44% 40% at 88% 94%, var(--hgj_g3) 0%, transparent 74%),
+            #05060a;
+        transition: background 0.7s ease;
     }
     /* 暗角 */
-    .hgj_bg::before {
-        content: ''; position: absolute; inset: 0;
-        box-shadow: inset 0 0 220px 70px rgba(0,0,0,0.85);
+    .hgj_vignette {
+        position: fixed; inset: 0; z-index: 3; pointer-events: none;
+        box-shadow: inset 0 0 26vw 5vw rgba(0,0,0,0.62);
+    }
+    /* 沙尘颗粒层：缓慢漂移的细砂噪点 */
+    .hgj_grain {
+        position: fixed; inset: -12px; z-index: 3; pointer-events: none;
+        opacity: 0.055; mix-blend-mode: screen;
+        background-image: radial-gradient(rgba(255,255,255,0.9) 0.5px, transparent 0.7px);
+        background-size: 3px 3px;
+        animation: hgj_grain-shift 5s steps(5) infinite;
+    }
+    @keyframes hgj_grain-shift {
+        0%   { transform: translate(0, 0); }
+        100% { transform: translate(3px, 3px); }
     }
 
-    /* 顶栏 */
+    /* ===== 全屏画布 ===== */
+    #hgj_canvas {
+        position: fixed; inset: 0; z-index: 1;
+        width: 100%; height: 100%; display: block;
+        touch-action: none;
+    }
+
+    /* ===== 顶部 ===== */
     .hgj_top {
-        position: relative; z-index: 10;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 1.5rem 1.9rem;
+        position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+        display: flex; justify-content: space-between; align-items: flex-start;
+        padding: 1.15rem 1.5rem; pointer-events: none;
     }
     .hgj_back {
-        padding: 0.5em 1.15em; font-size: 0.78rem; letter-spacing: 0.04em;
+        pointer-events: auto;
+        padding: 0.5em 1.15em; font-size: 0.76rem; letter-spacing: 0.05em;
         color: #d6d3d1; text-decoration: none;
-        background: rgba(255,255,255,0.04);
+        background: rgba(255,255,255,0.045);
         border: 1px solid rgba(214,211,209,0.16);
-        border-radius: 2em; backdrop-filter: blur(10px);
+        border-radius: 2em; backdrop-filter: blur(12px);
         transition: all 0.28s ease;
     }
     .hgj_back:hover {
         color: #fde68a; border-color: rgba(245,194,107,0.55);
-        box-shadow: 0 0 18px -6px rgba(245,194,107,0.7);
+        box-shadow: 0 0 20px -6px rgba(245,194,107,0.7);
         transform: translateY(-2px);
     }
+    .hgj_meta { text-align: right; }
     .hgj_tag {
-        font-family: "Consolas", monospace; font-size: 0.64rem;
+        display: block; font-family: "Consolas", monospace; font-size: 0.62rem;
         letter-spacing: 0.3em; color: #57534e; text-transform: uppercase;
     }
-
-    /* 主舞台 */
-    .hgj_hero {
-        position: relative; z-index: 2;
-        flex: 1; display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        gap: 1.9rem; padding: 1rem 1rem 2rem;
-    }
-    .hgj_stage { width: min(92vw, 1180px); perspective: 1600px; }
-    .hgj_canvas-wrap {
-        position: relative; width: 100%; aspect-ratio: 520 / 138;
-        transform-style: preserve-3d;
-        transition: transform 0.35s ease;
-    }
-    canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
-
-    .hgj_corner {
-        position: absolute; width: 18px; height: 18px;
-        border: 0 solid rgba(245,194,107,0.35);
-        pointer-events: none;
-    }
-    .hgj_corner.tl { top: -0.4rem; left: -0.4rem; border-top-width: 1px; border-left-width: 1px; }
-    .hgj_corner.tr { top: -0.4rem; right: -0.4rem; border-top-width: 1px; border-right-width: 1px; }
-    .hgj_corner.bl { bottom: -0.4rem; left: -0.4rem; border-bottom-width: 1px; border-left-width: 1px; }
-    .hgj_corner.br { bottom: -0.4rem; right: -0.4rem; border-bottom-width: 1px; border-right-width: 1px; }
-
-    .hgj_stat {
-        position: absolute; right: 0.2rem; bottom: -1.35rem;
+    .hgj_hud {
+        display: block; margin-top: 0.45rem;
         font-family: "Consolas", monospace; font-size: 0.6rem;
-        letter-spacing: 0.14em; color: #44403c; pointer-events: none;
+        letter-spacing: 0.16em; color: #44403c;
     }
 
-    .hgj_sub {
-        font-size: 0.76rem; letter-spacing: 0.22em; color: #78716c;
-        text-align: center; margin-top: -0.4rem;
+    /* ===== 操作提示 ===== */
+    .hgj_hint {
+        position: fixed; left: 50%; bottom: 6.4rem; transform: translateX(-50%);
+        z-index: 20; pointer-events: none;
+        font-size: 0.7rem; letter-spacing: 0.18em; color: #6b6560;
+        white-space: nowrap; opacity: 0.75;
     }
-    .hgj_sub b { color: #e8c07d; font-weight: 600; letter-spacing: 0.12em; }
 
-    /* 控制区 */
-    .hgj_controls {
-        display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
-        justify-content: center; padding: 0.72rem 1.3rem;
-        background: rgba(255,255,255,0.035);
+    /* ===== 底部控制坞 ===== */
+    .hgj_dock {
+        position: fixed; left: 50%; bottom: 1.5rem; transform: translateX(-50%);
+        z-index: 20; display: flex; align-items: center; gap: 1.05rem;
+        padding: 0.7rem 1.25rem; flex-wrap: wrap; justify-content: center;
+        max-width: calc(100vw - 2rem);
+        background: rgba(18,18,20,0.62);
         border: 1px solid rgba(214,211,209,0.14);
-        border-radius: 3em; backdrop-filter: blur(14px);
-        box-shadow: 0 16px 40px -22px rgba(0,0,0,0.9);
+        border-radius: 3em; backdrop-filter: blur(16px);
+        box-shadow: 0 18px 44px -24px rgba(0,0,0,0.95);
     }
     .hgj_btn {
-        padding: 0.52em 1.3em; font-size: 0.76rem; letter-spacing: 0.08em;
-        font-family: inherit; color: #e7e5e4; cursor: pointer;
+        padding: 0.5em 1.15em; font-size: 0.74rem; letter-spacing: 0.06em;
+        font-family: inherit; color: #e7e5e4; cursor: pointer; white-space: nowrap;
         background: rgba(255,255,255,0.05);
         border: 1px solid rgba(214,211,209,0.2);
         border-radius: 2em; transition: all 0.24s ease;
@@ -122,504 +115,657 @@
     .hgj_btn:hover {
         color: #fde68a; border-color: rgba(245,194,107,0.6);
         background: rgba(245,194,107,0.1);
-        box-shadow: 0 0 20px -8px rgba(245,194,107,0.8);
+        box-shadow: 0 0 22px -9px rgba(245,194,107,0.9);
         transform: translateY(-1px);
     }
     .hgj_btn.hgj_on {
         color: #1c1917; background: linear-gradient(135deg, #fde68a, #e8b86d);
-        border-color: transparent; box-shadow: 0 0 22px -8px rgba(245,194,107,0.9);
+        border-color: transparent; box-shadow: 0 0 24px -9px rgba(245,194,107,0.95);
     }
 
-    .hgj_force { display: flex; align-items: center; gap: 0.6rem; }
-    .hgj_force label { font-size: 0.72rem; color: #a8a29e; letter-spacing: 0.08em; }
+    .hgj_force { display: flex; align-items: center; gap: 0.55rem; }
+    .hgj_force label { font-size: 0.7rem; color: #a8a29e; letter-spacing: 0.08em; }
     .hgj_force em {
         font-style: normal; font-family: "Consolas", monospace;
-        font-size: 0.7rem; color: #e8c07d; width: 2em; text-align: right;
+        font-size: 0.68rem; color: #e8c07d; width: 1.6em; text-align: right;
     }
     input[type="range"] {
         -webkit-appearance: none; appearance: none;
-        width: 110px; height: 3px; border-radius: 2px; cursor: pointer; outline: none;
+        width: 96px; height: 3px; border-radius: 2px; cursor: pointer; outline: none;
         background: linear-gradient(90deg, #57534e, #e8c07d);
     }
     input[type="range"]::-webkit-slider-thumb {
         -webkit-appearance: none; appearance: none;
-        width: 13px; height: 13px; border-radius: 50%;
+        width: 12px; height: 12px; border-radius: 50%;
         background: #fde68a; border: 1px solid #b58330;
         box-shadow: 0 0 12px rgba(245,194,107,0.9);
         transition: transform 0.2s ease;
     }
-    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.22); }
 
-    .hgj_palettes { display: flex; align-items: center; gap: 0.5rem; }
-    .hgj_palettes > span { font-size: 0.72rem; color: #a8a29e; letter-spacing: 0.08em; margin-right: 0.15rem; }
+    .hgj_palettes { display: flex; align-items: center; gap: 0.42rem; }
+    .hgj_palettes > span {
+        font-size: 0.7rem; color: #a8a29e; letter-spacing: 0.08em; margin-right: 0.2rem;
+    }
     .hgj_sw {
-        width: 21px; height: 21px; border-radius: 50%; cursor: pointer;
-        border: 1px solid rgba(255,255,255,0.18);
+        width: 17px; height: 17px; border-radius: 50%; cursor: pointer; padding: 0;
+        border: 1px solid rgba(255,255,255,0.16);
         transition: all 0.24s ease;
     }
-    .hgj_sw:hover { transform: scale(1.14); }
+    .hgj_sw:hover { transform: scale(1.2); }
     .hgj_sw.hgj_on {
         border-color: #f8fafc;
-        box-shadow: 0 0 14px rgba(255,255,255,0.55), 0 0 0 2px rgba(255,255,255,0.12);
-        transform: scale(1.08);
+        box-shadow: 0 0 13px rgba(255,255,255,0.5), 0 0 0 2px rgba(255,255,255,0.1);
+        transform: scale(1.1);
     }
 
-    /* 页脚 */
-    .hgj_footer {
-        position: relative; z-index: 2;
-        display: flex; justify-content: space-between; align-items: center; gap: 1rem;
-        padding: 1.1rem 1.9rem;
-        border-top: 1px solid rgba(214,211,209,0.09);
-        font-size: 0.68rem; color: #44403c; letter-spacing: 0.1em;
-    }
-    .hgj_footer .hgj_fr { font-family: "Consolas", monospace; letter-spacing: 0.2em; color: #292524; }
-
-    @media (max-width: 640px) {
-        .hgj_canvas-wrap { aspect-ratio: 520 / 170; }
-        .hgj_controls { gap: 0.75rem; padding: 0.7rem 1rem; }
+    @media (max-width: 700px) {
+        .hgj_hint { bottom: 8.6rem; font-size: 0.62rem; letter-spacing: 0.1em; }
+        .hgj_dock { gap: 0.7rem; padding: 0.6rem 0.9rem; border-radius: 1.6rem; }
         .hgj_palettes > span, .hgj_force label { display: none; }
-        .hgj_footer { flex-direction: column; text-align: center; gap: 0.35rem; }
-        .hgj_sub { letter-spacing: 0.1em; font-size: 0.7rem; }
+        .hgj_btn { font-size: 0.7rem; padding: 0.45em 0.9em; }
+        input[type="range"] { width: 68px; }
+        .hgj_sw { width: 15px; height: 15px; }
+        .hgj_top { padding: 0.9rem 1rem; }
     }
 </style>
 </head>
 <body>
 <div class="hgj_bg"></div>
 
+<canvas id="hgj_canvas"></canvas>
+
+<div class="hgj_grain"></div>
+<div class="hgj_vignette"></div>
+
 <header class="hgj_top">
     <a href="../index.html" class="hgj_back">← 返回首页</a>
-    <span class="hgj_tag">18-1 · Particle Dispersion</span>
+    <div class="hgj_meta">
+        <span class="hgj_tag">18-1 · Sand Dispersion</span>
+        <span class="hgj_hud" id="hgj_hud">PARTICLES 0 · -- FPS</span>
+    </div>
 </header>
 
-<main class="hgj_hero">
-    <div class="hgj_stage">
-        <div class="hgj_canvas-wrap" id="hgj_wrap">
-            <canvas id="hgj_canvas"></canvas>
-            <div class="hgj_corner tl"></div><div class="hgj_corner tr"></div>
-            <div class="hgj_corner bl"></div><div class="hgj_corner br"></div>
-            <span class="hgj_stat" id="hgj_stat">PARTICLES 0 · 60 FPS</span>
-        </div>
+<p class="hgj_hint">移动鼠标搅动沙粒 · 点击冲击波 · 双击归位 · 空格爆散</p>
+
+<div class="hgj_dock">
+    <button class="hgj_btn" id="hgj_scatter">✦ 爆散</button>
+    <button class="hgj_btn" id="hgj_pause">⏸ 暂停</button>
+    <div class="hgj_force">
+        <label for="hgj_force">斥力</label>
+        <input type="range" id="hgj_force" min="0" max="100" value="52">
+        <em id="hgj_forceVal">52</em>
     </div>
-
-    <p class="hgj_sub">移动鼠标 <b>打散粒子</b> · 点击 <b>冲击波</b> · 按住拖动 <b>持续消散</b></p>
-
-    <div class="hgj_controls">
-        <button class="hgj_btn" id="hgj_scatter">✦ 爆散 / 聚拢</button>
-        <div class="hgj_force">
-            <label for="hgj_force">斥力</label>
-            <input type="range" id="hgj_force" min="0" max="100" value="55">
-            <em id="hgj_forceVal">55</em>
-        </div>
-        <div class="hgj_palettes" id="hgj_palettes">
-            <span>配色</span>
-            <button class="hgj_sw hgj_on" data-p="0" title="鎏金" style="background:linear-gradient(135deg,#fde68a,#d99a3c)"></button>
-            <button class="hgj_sw" data-p="1" title="月白" style="background:linear-gradient(135deg,#f8fafc,#94a3b8)"></button>
-            <button class="hgj_sw" data-p="2" title="霁青" style="background:linear-gradient(135deg,#a7f3d0,#2dd4bf)"></button>
-        </div>
-    </div>
-</main>
-
-<footer class="hgj_footer">
-    <span>© 2026 胡国静 · 3D 粒子文字消散</span>
-    <span class="hgj_fr">CANVAS 2D · NO LIBRARY</span>
-</footer>
+    <div class="hgj_palettes" id="hgj_palettes"><span>配色</span></div>
+</div>
 
 <script>
 (function () {
-    var hgj_canvas = document.getElementById('hgj_canvas');
-    var hgj_wrap = document.getElementById('hgj_wrap');
-    var hgj_ctx = hgj_canvas.getContext('2d');
-    var hgj_stat = document.getElementById('hgj_stat');
+    'use strict';
+
+    var hgj_cvs = document.getElementById('hgj_canvas');
+    var hgj_ctx = hgj_cvs.getContext('2d');
+    var hgj_hud = document.getElementById('hgj_hud');
     var hgj_scatterBtn = document.getElementById('hgj_scatter');
+    var hgj_pauseBtn = document.getElementById('hgj_pause');
     var hgj_forceInput = document.getElementById('hgj_force');
     var hgj_forceVal = document.getElementById('hgj_forceVal');
+    var hgj_paletteBox = document.getElementById('hgj_palettes');
 
-    var hgj_dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var hgj_W = 0, hgj_H = 0;
-    var hgj_cx = 0, hgj_cy = 0;
-    var hgj_time = 0;
-    var hgj_lastTs = 0;
-    var hgj_fadeStart = 0;
-    var hgj_scattered = false;
-    var hgj_spring = 1;           // 弹簧系数倍率（爆散时降低）
-    var hgj_force = 0.55;
-
-    var hgj_mouse = { x: -9999, y: -9999, active: false, down: false };
-    var hgj_rotY = 0, hgj_rotX = 0;
-    var hgj_rotTargetY = 0, hgj_rotTargetX = 0;
-
-    var hgj_particles = [];
-    var hgj_dust = [];
-    var hgj_rings = [];
-
+    // ===== 配色方案（7 套，每套 5 级明暗，颗粒更有层次）=====
     var hgj_palettes = [
         {
             name: '鎏金',
-            colors: ['#fff7dc', '#fde68a', '#e8b86d', '#c98f3c'],
-            glow: '#f5c26b',
-            bg: ['rgba(245,194,107,0.16)', 'rgba(253,230,138,0.10)', 'rgba(217,154,60,0.10)']
+            colors: ['#fffbea', '#fde68a', '#f0c674', '#c9922f', '#8a5a1e'],
+            glow: '#f7c66b',
+            bg: ['rgba(245,194,107,0.16)', 'rgba(253,230,138,0.09)', 'rgba(201,143,60,0.10)']
         },
         {
             name: '月白',
-            colors: ['#ffffff', '#f1f5f9', '#cbd5e1', '#94a3b8'],
-            glow: '#cbd5e1',
-            bg: ['rgba(148,163,184,0.14)', 'rgba(226,232,240,0.08)', 'rgba(100,116,139,0.10)']
+            colors: ['#ffffff', '#f3f6fa', '#d5dee8', '#a3b0be', '#6f7c8c'],
+            glow: '#d5dee8',
+            bg: ['rgba(148,163,184,0.15)', 'rgba(226,232,240,0.08)', 'rgba(100,116,139,0.10)']
         },
         {
             name: '霁青',
-            colors: ['#f0fdfa', '#a7f3d0', '#5eead4', '#2dd4bf'],
-            glow: '#5eead4',
-            bg: ['rgba(45,212,191,0.14)', 'rgba(167,243,208,0.08)', 'rgba(13,148,136,0.10)']
+            colors: ['#f2fffd', '#b5f7e4', '#6fe6d3', '#2ec4b6', '#0d8f85'],
+            glow: '#5fe6d6',
+            bg: ['rgba(45,212,191,0.15)', 'rgba(167,243,208,0.08)', 'rgba(13,148,136,0.10)']
+        },
+        {
+            name: '熔橙',
+            colors: ['#fff8ee', '#ffd9a8', '#ff9f43', '#f0640b', '#96340a'],
+            glow: '#ff9f43',
+            bg: ['rgba(255,159,67,0.15)', 'rgba(255,217,168,0.08)', 'rgba(240,100,11,0.09)']
+        },
+        {
+            name: '紫罗',
+            colors: ['#fbf7ff', '#e9d5ff', '#c084fc', '#9d4ef0', '#6822a8'],
+            glow: '#c084fc',
+            bg: ['rgba(168,85,247,0.16)', 'rgba(233,213,255,0.08)', 'rgba(107,33,168,0.10)']
+        },
+        {
+            name: '赤砂',
+            colors: ['#fff4f4', '#ffd0d4', '#fb7185', '#e11d48', '#8f1232'],
+            glow: '#fb7185',
+            bg: ['rgba(251,113,133,0.15)', 'rgba(254,205,211,0.08)', 'rgba(190,18,60,0.09)']
+        },
+        {
+            name: '极光',
+            colors: ['#eefcff', '#a5f3fc', '#67e8f9', '#3b82f6', '#6d28d9'],
+            glow: '#67e8f9',
+            bg: ['rgba(34,211,238,0.15)', 'rgba(165,243,252,0.09)', 'rgba(109,40,217,0.10)']
         }
     ];
+
     var hgj_paletteIndex = 0;
+    var hgj_glowRgb = [247, 198, 107];
+
+    // ===== 基础状态 =====
+    var hgj_W = 0, hgj_H = 0;
+    var hgj_dpr = 1;
+    var hgj_time = 0;
+    var hgj_lastTs = 0;
+    var hgj_fadeStart = 0;
+    var hgj_paused = false;
+    var hgj_scattered = false;
+    var hgj_spring = 1;
+    var hgj_force = 0.52;
+    var hgj_maxOffset = 1200;
+
+    var hgj_rotY = 0, hgj_rotX = 0;
+    var hgj_rotTargetY = 0, hgj_rotTargetX = 0;
+    var hgj_sy1 = 0, hgj_cy1 = 1, hgj_sx1 = 0, hgj_cx1 = 1;
+
+    var hgj_mouse = { x: -9999, y: -9999, active: false, down: false };
+    var hgj_particles = [];
+    var hgj_particleCount = 0;
+    var hgj_dust = [];
+    var hgj_rings = [];
 
     var hgj_offCanvas = document.createElement('canvas');
     var hgj_offCtx = hgj_offCanvas.getContext('2d');
+    var hgj_fpsAcc = 0, hgj_fpsCount = 0, hgj_fpsTimer = 0;
+
+    // ===== 工具 =====
+    function hgj_hexToRgb(hex) {
+        var n = parseInt(hex.slice(1), 16);
+        return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function hgj_rgba(rgb, a) {
+        return 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + a + ')';
+    }
 
     // ===== 尺寸 =====
     function hgj_resize() {
-        var rect = hgj_wrap.getBoundingClientRect();
-        hgj_W = Math.max(320, rect.width);
-        hgj_H = Math.max(100, rect.height);
-        hgj_cx = hgj_W / 2;
-        hgj_cy = hgj_H / 2;
+        hgj_W = window.innerWidth;
+        hgj_H = window.innerHeight;
 
-        hgj_canvas.width = Math.round(hgj_W * hgj_dpr);
-        hgj_canvas.height = Math.round(hgj_H * hgj_dpr);
+        // 大屏降低像素比，保证粒子数量下的帧率
+        var area = hgj_W * hgj_H;
+        var maxDpr = area > 1400000 ? 1.25 : (area > 800000 ? 1.5 : 2);
+        hgj_dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
+
+        hgj_cvs.width = Math.round(hgj_W * hgj_dpr);
+        hgj_cvs.height = Math.round(hgj_H * hgj_dpr);
         hgj_ctx.setTransform(hgj_dpr, 0, 0, hgj_dpr, 0, 0);
 
-        hgj_offCanvas.width = Math.round(hgj_W);
-        hgj_offCanvas.height = Math.round(hgj_H);
+        hgj_maxOffset = Math.max(hgj_W, hgj_H) * 0.95;
 
+        hgj_prepRot();
         hgj_sampleText();
         hgj_initDust();
     }
 
-    // ===== 从文字像素采样粒子 =====
-    function hgj_sampleText() {
-        hgj_particles = [];
-
-        var fontSize = hgj_H * 0.78;
-        hgj_offCtx.clearRect(0, 0, hgj_W, hgj_H);
-        hgj_offCtx.font = '900 ' + fontSize + 'px "Microsoft YaHei","PingFang SC",sans-serif';
-        hgj_offCtx.textAlign = 'center';
-        hgj_offCtx.textBaseline = 'middle';
-        hgj_offCtx.fillStyle = '#ffffff';
-        hgj_offCtx.fillText('胡国静', hgj_cx, hgj_cy);
-
-        var img = hgj_offCtx.getImageData(0, 0, Math.round(hgj_W), Math.round(hgj_H)).data;
-        var step = hgj_W > 800 ? 5 : 4;
-        var colors = hgj_palettes[hgj_paletteIndex].colors;
-        var count = 0;
-
-        for (var y = 0; y < hgj_H; y += step) {
-            for (var x = 0; x < hgj_W; x += step) {
-                var idx = (Math.round(y) * Math.round(hgj_W) + Math.round(x)) * 4;
-                if (img[idx + 3] > 110) {
-                    var relX = x - hgj_cx;
-                    var relY = y - hgj_cy;
-                    // 依据水平位置分配渐变颜色
-                    var ratio = Math.min(1, Math.max(0, (x / hgj_W) * 1.15 - 0.05));
-                    var colorIdx = Math.min(colors.length - 1, Math.floor(ratio * colors.length));
-
-                    hgj_particles.push({
-                        hx: relX, hy: relY,
-                        hz: (Math.random() - 0.5) * 46,
-                        ox: (Math.random() - 0.5) * 320,
-                        oy: (Math.random() - 0.5) * 260,
-                        oz: (Math.random() - 0.5) * 120,
-                        vx: 0, vy: 0, vz: 0,
-                        size: 1.1 + Math.random() * 1.7,
-                        color: colors[colorIdx],
-                        phase: Math.random() * Math.PI * 2,
-                        delay: (x / hgj_W) * 0.7 + Math.random() * 0.35
-                    });
-                    count++;
-                }
-            }
-        }
-        hgj_particleCount = count;
+    function hgj_prepRot() {
+        hgj_sy1 = Math.sin(hgj_rotY); hgj_cy1 = Math.cos(hgj_rotY);
+        hgj_sx1 = Math.sin(hgj_rotX); hgj_cx1 = Math.cos(hgj_rotX);
     }
 
-    var hgj_particleCount = 0;
-
-    // ===== 背景浮尘 =====
-    function hgj_initDust() {
-        hgj_dust = [];
-        var n = Math.max(28, Math.round(hgj_W / 26));
-        for (var i = 0; i < n; i++) {
-            hgj_dust.push({
-                x: Math.random() * hgj_W,
-                y: Math.random() * hgj_H,
-                r: 0.5 + Math.random() * 1.4,
-                vx: (Math.random() - 0.5) * 0.16,
-                vy: -0.05 - Math.random() * 0.16,
-                a: 0.12 + Math.random() * 0.3,
-                ph: Math.random() * Math.PI * 2
-            });
-        }
-    }
-
-    // ===== 3D 投影 =====
+    // ===== 3D 投影（绕 Y 轴再绕 X 轴 + 透视缩放）=====
     function hgj_project(hx, hy, hz) {
-        var cy1 = Math.cos(hgj_rotY), sy1 = Math.sin(hgj_rotY);
-        var x1 = hx * cy1 + hz * sy1;
-        var z1 = -hx * sy1 + hz * cy1;
-
-        var cx1 = Math.cos(hgj_rotX), sx1 = Math.sin(hgj_rotX);
-        var y2 = hy * cx1 - z1 * sx1;
-        var z2 = hy * sx1 + z1 * cx1;
-
+        var x1 = hx * hgj_cy1 + hz * hgj_sy1;
+        var z1 = -hx * hgj_sy1 + hz * hgj_cy1;
+        var y2 = hy * hgj_cx1 - z1 * hgj_sx1;
+        var z2 = hy * hgj_sx1 + z1 * hgj_cx1;
         var persp = 1 + z2 / 1100;
         return {
-            x: hgj_cx + x1 * persp,
-            y: hgj_cy + y2 * persp,
+            x: hgj_W * 0.5 + x1 * persp,
+            y: hgj_H * 0.5 + y2 * persp,
             s: persp,
             z: z2
         };
     }
 
-    // ===== 主循环 =====
-    var hgj_fpsAcc = 0, hgj_fpsCount = 0, hgj_fpsTimer = 0;
+    // ===== 文字像素采样 → 沙粒 =====
+    function hgj_sampleText() {
+        var W = hgj_W, H = hgj_H;
+        var Wr = Math.round(W), Hr = Math.round(H);
+        var fontSize = Math.min(W * 0.225, H * 0.58);
 
-    function hgj_render(ts) {
-        var dt = hgj_lastTs ? Math.min(ts - hgj_lastTs, 50) : 16;
+        hgj_offCanvas.width = Wr;
+        hgj_offCanvas.height = Hr;
+        hgj_offCtx.clearRect(0, 0, Wr, Hr);
+        hgj_offCtx.font = '900 ' + fontSize + 'px "Microsoft YaHei","PingFang SC",sans-serif';
+        hgj_offCtx.textAlign = 'center';
+        hgj_offCtx.textBaseline = 'middle';
+        hgj_offCtx.fillStyle = '#ffffff';
+        hgj_offCtx.fillText('胡国静', W / 2, H / 2);
+
+        var data = hgj_offCtx.getImageData(0, 0, Wr, Hr).data;
+
+        // 粗采样（step 2）收集候选像素，后续随机抽稀，边缘更自然像沙
+        var cand = [];
+        for (var y = 0; y < Hr; y += 2) {
+            for (var x = 0; x < Wr; x += 2) {
+                if (data[(y * Wr + x) * 4 + 3] > 90) {
+                    cand.push(x, y);
+                }
+            }
+        }
+
+        var n = cand.length / 2;
+        var areaTarget = Math.round((W * H) / 340);
+        var target = Math.max(1400, Math.min(6400, areaTarget));
+        var reps = target / Math.max(1, n);
+        var baseReps = Math.floor(reps);
+        var extra = reps - baseReps;
+
+        var colors = hgj_palettes[hgj_paletteIndex].colors;
+        var arr = [];
+
+        for (var i = 0; i < n; i++) {
+            var cx0 = cand[i * 2];
+            var cy0 = cand[i * 2 + 1];
+
+            // 每个像素生成 1~N 颗沙粒，形成厚度堆积
+            var rep = baseReps + (Math.random() < extra ? 1 : 0);
+
+            for (var r = 0; r < rep; r++) {
+                var t = Math.min(1, Math.max(0, (cx0 / W) * 1.08 - 0.04));
+                var ci = Math.min(colors.length - 1, Math.floor(t * colors.length));
+                // 明暗混杂：高光与暗部随机穿插，制造砂砾质感
+                var rnd = Math.random();
+                if (rnd < 0.22) ci = 0;
+                else if (rnd < 0.36) ci = colors.length - 1;
+
+                var sr = Math.random();
+                arr.push({
+                    hx: cx0 - W * 0.5 + (Math.random() - 0.5) * 1.8,
+                    hy: cy0 - H * 0.5 + (Math.random() - 0.5) * 1.8,
+                    hz: (Math.random() - 0.5) * 76,
+                    ox: (Math.random() - 0.5) * W * 0.55,
+                    oy: (Math.random() - 0.5) * H * 0.55,
+                    oz: (Math.random() - 0.5) * 190,
+                    vx: 0, vy: 0, vz: 0,
+                    size: 1.1 + Math.random() * 2.0,
+                    shape: sr < 0.45 ? 0 : (sr < 0.87 ? 1 : 2),
+                    color: colors[ci],
+                    alphaBase: 0.42 + Math.random() * 0.55,
+                    stretch: 1 + Math.random() * 1.5,
+                    phase: Math.random() * Math.PI * 2,
+                    delay: (cx0 / W) * 0.5 + Math.random() * 0.4,
+                    _proj: null,
+                    _fade: 1,
+                    _speed: 0
+                });
+            }
+        }
+
+        hgj_particles = arr;
+        hgj_particleCount = arr.length;
+        for (var k = 0; k < arr.length; k++) {
+            var pp = arr[k];
+            pp._proj = hgj_project(pp.hx + pp.ox, pp.hy + pp.oy, pp.hz + pp.oz);
+        }
+    }
+
+    // ===== 背景浮尘 =====
+    function hgj_initDust() {
+        hgj_dust = [];
+        var n = Math.max(40, Math.round(hgj_W * hgj_H / 6500));
+        for (var i = 0; i < n; i++) {
+            hgj_dust.push({
+                x: Math.random() * hgj_W,
+                y: Math.random() * hgj_H,
+                r: 0.4 + Math.random() * 1.5,
+                vx: (Math.random() - 0.5) * 0.18,
+                vy: -0.04 - Math.random() * 0.16,
+                a: 0.10 + Math.random() * 0.3,
+                ph: Math.random() * Math.PI * 2
+            });
+        }
+    }
+
+    // ===== 主循环 =====
+    function hgj_loop(ts) {
+        if (!hgj_lastTs) hgj_lastTs = ts;
+        var dt = Math.min(ts - hgj_lastTs, 46);
         hgj_lastTs = ts;
+
+        if (hgj_paused) { requestAnimationFrame(hgj_loop); return; }
+
         hgj_time += dt / 1000;
 
-        // 旋转目标：随鼠标轻微立体转动
-        hgj_rotTargetY = hgj_mouse.active ? ((hgj_mouse.x - hgj_cx) / hgj_W) * 0.5 : Math.sin(hgj_time * 0.5) * 0.06;
-        hgj_rotTargetX = hgj_mouse.active ? -((hgj_mouse.y - hgj_cy) / hgj_H) * 0.24 : 0;
-        hgj_rotY += (hgj_rotTargetY - hgj_rotY) * 0.08;
-        hgj_rotX += (hgj_rotTargetX - hgj_rotX) * 0.08;
+        // 立体旋转目标跟随鼠标
+        if (hgj_mouse.active) {
+            hgj_rotTargetY = ((hgj_mouse.x - hgj_W * 0.5) / hgj_W) * 0.62;
+            hgj_rotTargetX = -((hgj_mouse.y - hgj_H * 0.5) / hgj_H) * 0.30;
+        } else {
+            hgj_rotTargetY = Math.sin(hgj_time * 0.42) * 0.08;
+            hgj_rotTargetX = Math.cos(hgj_time * 0.33) * 0.05;
+        }
+        hgj_rotY += (hgj_rotTargetY - hgj_rotY) * 0.07;
+        hgj_rotX += (hgj_rotTargetX - hgj_rotX) * 0.07;
+        hgj_prepRot();
 
-        // 弹簧倍率恢复
-        if (hgj_scattered) hgj_spring = 0.16;
-        else hgj_spring += (1 - hgj_spring) * 0.09;
+        if (hgj_scattered) hgj_spring = 0.14;
+        else hgj_spring += (1 - hgj_spring) * 0.1;
 
         var elapsed = Math.max(0, ts - hgj_fadeStart) / 1000;
-        var fadeIn = Math.min(1, elapsed / 1.6);
+        var fadeIn = Math.min(1, elapsed / 1.5);
 
         hgj_ctx.clearRect(0, 0, hgj_W, hgj_H);
 
-        // ---- 背景浮尘 ----
+        hgj_drawDust(fadeIn);
+        hgj_drawMouseGlow();
+        hgj_updateParticles(dt);
+        hgj_drawParticles(elapsed, fadeIn);
+        hgj_drawRings();
+
+        // FPS / 粒子数
+        hgj_fpsAcc += dt; hgj_fpsCount++;
+        if (ts - hgj_fpsTimer > 420) {
+            hgj_fpsTimer = ts;
+            var fps = Math.round(1000 / (hgj_fpsAcc / Math.max(1, hgj_fpsCount)));
+            hgj_hud.textContent = 'PARTICLES ' + hgj_particleCount + ' · ' + fps + ' FPS';
+            hgj_fpsAcc = 0; hgj_fpsCount = 0;
+        }
+
+        requestAnimationFrame(hgj_loop);
+    }
+
+    // ===== 背景浮尘 =====
+    function hgj_drawDust(fadeIn) {
         var pal = hgj_palettes[hgj_paletteIndex];
-        for (var d = 0; d < hgj_dust.length; d++) {
-            var du = hgj_dust[d];
+        var ctx = hgj_ctx;
+        for (var i = 0; i < hgj_dust.length; i++) {
+            var du = hgj_dust[i];
             du.x += du.vx; du.y += du.vy;
-            if (du.y < -6) { du.y = hgj_H + 6; du.x = Math.random() * hgj_W; }
-            if (du.x < -6) du.x = hgj_W + 6;
-            if (du.x > hgj_W + 6) du.x = -6;
-            var tw = 0.55 + Math.sin(hgj_time * 1.4 + du.ph) * 0.45;
-            hgj_ctx.beginPath();
-            hgj_ctx.arc(du.x, du.y, du.r, 0, Math.PI * 2);
-            hgj_ctx.fillStyle = pal.glow;
-            hgj_ctx.globalAlpha = du.a * tw * fadeIn;
-            hgj_ctx.fill();
-        }
-        hgj_ctx.globalAlpha = 1;
+            if (du.y < -8) { du.y = hgj_H + 8; du.x = Math.random() * hgj_W; }
+            if (du.x < -8) du.x = hgj_W + 8;
+            if (du.x > hgj_W + 8) du.x = -8;
 
-        // ---- 冲击波环 ----
-        for (var r = hgj_rings.length - 1; r >= 0; r--) {
-            var ring = hgj_rings[r];
-            var age = hgj_time - ring.t0;
-            if (age > 1.1) { hgj_rings.splice(r, 1); continue; }
-            var p = age / 1.1;
-            hgj_ctx.beginPath();
-            hgj_ctx.arc(ring.x, ring.y, 20 + p * hgj_W * 0.5, 0, Math.PI * 2);
-            hgj_ctx.strokeStyle = pal.glow;
-            hgj_ctx.globalAlpha = (1 - p) * 0.45;
-            hgj_ctx.lineWidth = 1.6 * (1 - p) + 0.4;
-            hgj_ctx.stroke();
+            var tw = 0.5 + Math.sin(hgj_time * 1.3 + du.ph) * 0.5;
+            ctx.beginPath();
+            ctx.arc(du.x, du.y, du.r, 0, 6.2832);
+            ctx.fillStyle = pal.glow;
+            ctx.globalAlpha = du.a * tw * fadeIn;
+            ctx.fill();
         }
-        hgj_ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
+    }
 
-        // ---- 粒子物理 ----
-        var springK = 0.014 * hgj_spring;
-        var damp = 0.9;
+    // ===== 鼠标柔光 =====
+    function hgj_drawMouseGlow() {
+        if (!hgj_mouse.active) return;
+        var ctx = hgj_ctx;
+        var rad = Math.max(110, Math.min(hgj_W, hgj_H) * 0.17);
+        var mx = hgj_mouse.x, my = hgj_mouse.y;
+
+        ctx.globalCompositeOperation = 'lighter';
+        var g = ctx.createRadialGradient(mx, my, 0, mx, my, rad);
+        g.addColorStop(0, hgj_rgba(hgj_glowRgb, hgj_mouse.down ? 0.26 : 0.16));
+        g.addColorStop(0.42, hgj_rgba(hgj_glowRgb, hgj_mouse.down ? 0.10 : 0.06));
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(mx, my, rad, 0, 6.2832);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+    }
+
+    // ===== 物理：弹簧回归 + 鼠标沙化排斥 =====
+    function hgj_updateParticles(dt) {
+        var springK = 0.013 * hgj_spring;
+        var damp = 0.905;
+        var radius = Math.max(72, Math.min(hgj_W, hgj_H) * 0.118);
+        var soft = radius * 1.5;
+        var force = 0.4 + hgj_force * 1.3;
+        var mx = hgj_mouse.x, my = hgj_mouse.y;
+        var mactive = hgj_mouse.active;
+        var down = hgj_mouse.down;
+        var stepRatio = dt / 16.67;
+
+        var soft2 = soft * soft;
+        var rad2 = radius * radius;
 
         for (var i = 0; i < hgj_particles.length; i++) {
-            var p2 = hgj_particles[i];
+            var p = hgj_particles[i];
+            var pr = p._proj;
+            var fade = 1;
 
-            // 弹簧回归
-            p2.vx += -p2.ox * springK;
-            p2.vy += -p2.oy * springK;
-            p2.vz += -p2.oz * springK;
+            if (pr && mactive) {
+                var ddx = pr.x - mx, ddy = pr.y - my;
+                var dd = ddx * ddx + ddy * ddy;
 
-            // 微小呼吸
-            p2.vx += Math.sin(hgj_time * 1.6 + p2.phase) * 0.05;
-            p2.vy += Math.cos(hgj_time * 1.3 + p2.phase) * 0.05;
+                if (dd < soft2) {
+                    var dd1 = Math.sqrt(dd);
+                    var k = 1 - dd1 / soft;
+                    // 靠近指针的沙粒逐渐变淡缩小 → 沙化消散感
+                    fade = 1 - k * k * 0.75;
 
-            // 鼠标排斥（打散）
-            var proj = hgj_project(p2.hx + p2.ox, p2.hy + p2.oy, p2.hz + p2.oz);
-            if (hgj_mouse.active) {
-                var mdx = proj.x - hgj_mouse.x;
-                var mdy = proj.y - hgj_mouse.y;
-                var md2 = mdx * mdx + mdy * mdy;
-                var radius = hgj_mouse.down ? 150 : 105;
-                if (md2 < radius * radius && md2 > 0.01) {
-                    var md = Math.sqrt(md2);
-                    var f = (1 - md / radius);
-                    f = f * f * (hgj_mouse.down ? 26 : 16) * (0.35 + hgj_force);
-                    p2.vx += (mdx / md) * f;
-                    p2.vy += (mdy / md) * f;
-                    // 3D 散开：向景深方向推，形成空间消散
-                    p2.vz += (Math.random() - 0.5) * f * 0.9;
+                    if (dd < rad2 && dd1 > 0.01) {
+                        var f = 1 - dd1 / radius;
+                        f = f * f * (down ? 34 : 21) * force;
+                        p.vx += (ddx / dd1) * f;
+                        p.vy += (ddy / dd1) * f;
+                        // 向景深方向飞散，形成空间沙化
+                        p.vz += (Math.random() - 0.5) * f * 1.15;
+                    }
                 }
             }
+            p._fade = fade;
 
-            p2.vx *= damp; p2.vy *= damp; p2.vz *= damp;
-            p2.ox += p2.vx * dt / 16;
-            p2.oy += p2.vy * dt / 16;
-            p2.oz += p2.vz * dt / 16;
+            // 沙粒微颤 + 呼吸
+            p.vx += (Math.random() - 0.5) * 0.085 * hgj_spring;
+            p.vy += (Math.random() - 0.5) * 0.085 * hgj_spring;
+            p.vx += Math.sin(hgj_time * 1.5 + p.phase) * 0.05;
+            p.vy += Math.cos(hgj_time * 1.2 + p.phase) * 0.05;
 
-            // 限幅，避免飞太远
-            if (p2.ox * p2.ox + p2.oy * p2.oy > 360000) {
-                p2.vx *= 0.5; p2.vy *= 0.5;
+            // 弹簧回归
+            p.vx += -p.ox * springK;
+            p.vy += -p.oy * springK;
+            p.vz += -p.oz * springK;
+
+            p.vx *= damp; p.vy *= damp; p.vz *= damp;
+            p.ox += p.vx * stepRatio;
+            p.oy += p.vy * stepRatio;
+            p.oz += p.vz * stepRatio;
+
+            if (p.ox * p.ox + p.oy * p.oy > hgj_maxOffset * hgj_maxOffset) {
+                p.vx *= 0.35; p.vy *= 0.35;
             }
 
-            p2._proj = hgj_project(p2.hx + p2.ox, p2.hy + p2.oy, p2.hz + p2.oz);
+            p._speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+            p._proj = hgj_project(p.hx + p.ox, p.hy + p.oy, p.hz + p.oz);
         }
+    }
 
-        // ---- 绘制：先远后近 ----
-        var visibleCount = 0;
+    // ===== 绘制沙粒（分远近两遍）=====
+    function hgj_drawParticles(elapsed, fadeIn) {
+        var ctx = hgj_ctx;
+        var pal = hgj_palettes[hgj_paletteIndex];
+        var palGlow = pal.glow;
+        var count = hgj_particles.length;
+
         for (var pass = 0; pass < 2; pass++) {
-            for (var k = 0; k < hgj_particles.length; k++) {
-                var pc = hgj_particles[k];
-                var pr = pc._proj;
+            for (var k = 0; k < count; k++) {
+                var p = hgj_particles[k];
+                var pr = p._proj;
                 if (!pr) continue;
                 if (pass === 0 && pr.z >= 0) continue;
                 if (pass === 1 && pr.z < 0) continue;
 
-                var appear = Math.min(1, Math.max(0, (elapsed - pc.delay) / 0.9));
+                var appear = Math.min(1, Math.max(0, (elapsed - p.delay) / 0.9));
                 if (appear <= 0) continue;
                 appear = 1 - Math.pow(1 - appear, 3);
-                if (pass === 1) visibleCount++;
 
-                var scale = Math.max(0.35, pr.s);
-                var size = pc.size * scale;
-                var alpha = (0.34 + (pr.z + 60) / 200) * 0.9;
-                alpha = Math.max(0.18, Math.min(1, alpha)) * appear * fadeIn;
+                var scale = Math.max(0.4, pr.s);
+                var size = p.size * scale * (0.55 + 0.45 * p._fade);
+                var depth = 0.55 + (pr.z + 120) / 300;
+                depth = Math.max(0.3, Math.min(1.12, depth));
+                var alpha = p.alphaBase * appear * fadeIn * p._fade * depth;
 
-                hgj_ctx.beginPath();
-                hgj_ctx.arc(pr.x, pr.y, size, 0, Math.PI * 2);
-                hgj_ctx.fillStyle = pc.color;
-                hgj_ctx.globalAlpha = alpha;
-                hgj_ctx.fill();
+                ctx.globalAlpha = alpha < 0.02 ? 0.02 : (alpha > 1 ? 1 : alpha);
+                ctx.fillStyle = p.color;
 
-                // 少量粒子带光晕，控制开销
-                if (pc.size > 2.3 && pr.z > 10 && pass === 1) {
-                    hgj_ctx.beginPath();
-                    hgj_ctx.arc(pr.x, pr.y, size * 2.1, 0, Math.PI * 2);
-                    hgj_ctx.fillStyle = pal.glow;
-                    hgj_ctx.globalAlpha = alpha * 0.13;
-                    hgj_ctx.fill();
+                if (p.shape === 0) {
+                    ctx.beginPath();
+                    ctx.arc(pr.x, pr.y, size * 0.52, 0, 6.2832);
+                    ctx.fill();
+                } else if (p.shape === 1) {
+                    ctx.fillRect(pr.x - size * 0.3, pr.y - size * 0.28, size * 0.6, size * 0.52);
+                } else {
+                    // 沙须：速度越快拉得越长，像被吹散的细沙
+                    var len = size * (1.0 + Math.min(3.4, p._speed * 0.5)) * p.stretch;
+                    ctx.fillRect(pr.x - 0.42, pr.y - len * 0.5, 0.84, len);
+                }
+
+                // 少量近景大颗粒带光晕
+                if (pass === 1 && p.size > 2.5 && pr.z > 12 && p._fade > 0.6) {
+                    ctx.beginPath();
+                    ctx.arc(pr.x, pr.y, size * 2.2, 0, 6.2832);
+                    ctx.fillStyle = palGlow;
+                    ctx.globalAlpha = alpha * 0.1;
+                    ctx.fill();
                 }
             }
         }
-        hgj_ctx.globalAlpha = 1;
+        ctx.globalAlpha = 1;
+    }
 
-        // 文字底部细光带（呼吸感）
-        var bandY = hgj_cy + hgj_H * 0.33;
-        var grad = hgj_ctx.createLinearGradient(hgj_cx - hgj_W * 0.3, bandY, hgj_cx + hgj_W * 0.3, bandY);
-        grad.addColorStop(0, 'rgba(0,0,0,0)');
-        grad.addColorStop(0.5, pal.glow);
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-        hgj_ctx.globalAlpha = 0.22 * (0.7 + Math.sin(hgj_time * 1.4) * 0.3) * fadeIn;
-        hgj_ctx.fillStyle = grad;
-        hgj_ctx.fillRect(hgj_cx - hgj_W * 0.32, bandY, hgj_W * 0.64, 1);
-        hgj_ctx.globalAlpha = 1;
+    // ===== 冲击波 =====
+    function hgj_drawRings() {
+        if (!hgj_rings.length) return;
+        var ctx = hgj_ctx;
+        var maxR = Math.min(hgj_W, hgj_H) * 0.55;
+        ctx.globalCompositeOperation = 'lighter';
+        for (var i = hgj_rings.length - 1; i >= 0; i--) {
+            var ring = hgj_rings[i];
+            var age = hgj_time - ring.t0;
+            if (age > 1.25) { hgj_rings.splice(i, 1); continue; }
+            var pr = age / 1.25;
+            var rad = 24 + pr * maxR;
+            var a = (1 - pr) * 0.42;
 
-        // 状态与 FPS
-        hgj_fpsAcc += dt; hgj_fpsCount++;
-        if (ts - hgj_fpsTimer > 500) {
-            hgj_fpsTimer = ts;
-            var fps = Math.round(1000 / (hgj_fpsAcc / hgj_fpsCount));
-            hgj_stat.textContent = 'PARTICLES ' + hgj_particleCount + ' · ' + fps + ' FPS';
-            hgj_fpsAcc = 0; hgj_fpsCount = 0;
+            ctx.beginPath();
+            ctx.arc(ring.x, ring.y, rad, 0, 6.2832);
+            ctx.strokeStyle = hgj_rgba(hgj_glowRgb, a);
+            ctx.lineWidth = 1.6 * (1 - pr) + 0.5;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(ring.x, ring.y, rad * 0.72, 0, 6.2832);
+            ctx.strokeStyle = hgj_rgba(hgj_glowRgb, a * 0.4);
+            ctx.lineWidth = 1;
+            ctx.stroke();
         }
-
-        requestAnimationFrame(hgj_render);
+        ctx.globalCompositeOperation = 'source-over';
     }
 
     // ===== 交互 =====
     function hgj_xy(e) {
-        var rect = hgj_canvas.getBoundingClientRect();
-        return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        return { x: e.clientX, y: e.clientY };
     }
 
-    hgj_canvas.addEventListener('pointerenter', function () {
-        hgj_mouse.active = true;
-    });
-    hgj_canvas.addEventListener('pointerleave', function () {
+    hgj_cvs.addEventListener('pointerenter', function () { hgj_mouse.active = true; });
+
+    hgj_cvs.addEventListener('pointerleave', function () {
         hgj_mouse.active = false;
         hgj_mouse.down = false;
         hgj_mouse.x = -9999; hgj_mouse.y = -9999;
-        hgj_rotTargetY = 0; hgj_rotTargetX = 0;
     });
 
-    hgj_canvas.addEventListener('pointerdown', function (e) {
+    hgj_cvs.addEventListener('pointerdown', function (e) {
         var pt = hgj_xy(e);
         hgj_mouse.down = true;
+        hgj_mouse.active = true;
         hgj_mouse.x = pt.x; hgj_mouse.y = pt.y;
-        hgj_canvas.setPointerCapture(e.pointerId);
+        try { hgj_cvs.setPointerCapture(e.pointerId); } catch (err) {}
         hgj_rings.push({ x: pt.x, y: pt.y, t0: hgj_time });
-        hgj_impulse(pt.x, pt.y, 22);
+        hgj_impulse(pt.x, pt.y, 24);
     });
 
-    hgj_canvas.addEventListener('pointerup', function (e) {
+    hgj_cvs.addEventListener('pointerup', function (e) {
         hgj_mouse.down = false;
-        try { hgj_canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+        try { hgj_cvs.releasePointerCapture(e.pointerId); } catch (err) {}
     });
 
-    hgj_canvas.addEventListener('pointermove', function (e) {
+    hgj_cvs.addEventListener('pointermove', function (e) {
         var pt = hgj_xy(e);
         hgj_mouse.x = pt.x; hgj_mouse.y = pt.y;
         hgj_mouse.active = true;
+        if (hgj_mouse.down) hgj_impulse(pt.x, pt.y, 15);
+    });
 
-        // 画布 3D 轻微倾斜
-        var rx = -((pt.y - hgj_cy) / hgj_H) * 3.5;
-        var ry = ((pt.x - hgj_cx) / hgj_W) * 4.5;
-        hgj_wrap.style.transform = 'rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
-
-        if (hgj_mouse.down) hgj_impulse(pt.x, pt.y, 14);
+    // 双击归位
+    hgj_cvs.addEventListener('dblclick', function () {
+        for (var i = 0; i < hgj_particles.length; i++) {
+            var p = hgj_particles[i];
+            p.ox = 0; p.oy = 0; p.oz = 0;
+            p.vx = 0; p.vy = 0; p.vz = 0;
+        }
+        hgj_rings.length = 0;
+        hgj_scattered = false;
+        hgj_scatterBtn.classList.remove('hgj_on');
+        hgj_scatterBtn.textContent = '✦ 爆散';
     });
 
     // 局部冲击
     function hgj_impulse(mx, my, power) {
+        var rad = Math.max(140, Math.min(hgj_W, hgj_H) * 0.24);
+        var rad2 = rad * rad;
         for (var i = 0; i < hgj_particles.length; i++) {
             var p = hgj_particles[i];
-            var proj = p._proj || hgj_project(p.hx + p.ox, p.hy + p.oy, p.hz + p.oz);
-            var dx = proj.x - mx, dy = proj.y - my;
+            var pr = p._proj || hgj_project(p.hx + p.ox, p.hy + p.oy, p.hz + p.oz);
+            var dx = pr.x - mx, dy = pr.y - my;
             var d2 = dx * dx + dy * dy;
-            if (d2 < 90000 && d2 > 0.01) {
+            if (d2 < rad2 && d2 > 0.01) {
                 var d = Math.sqrt(d2);
-                var f = (1 - d / 300) * power;
+                var f = (1 - d / rad) * power;
                 p.vx += (dx / d) * f;
                 p.vy += (dy / d) * f;
-                p.vz += (Math.random() - 0.5) * f * 1.6;
+                p.vz += (Math.random() - 0.5) * f * 1.8;
             }
         }
     }
 
-    // 整体爆散 / 聚拢
-    hgj_scatterBtn.addEventListener('click', function () {
+    // 爆散 / 聚拢
+    function hgj_toggleScatter() {
         hgj_scattered = !hgj_scattered;
         hgj_scatterBtn.classList.toggle('hgj_on', hgj_scattered);
-        hgj_scatterBtn.textContent = hgj_scattered ? '✦ 聚拢归位' : '✦ 爆散 / 聚拢';
+        hgj_scatterBtn.textContent = hgj_scattered ? '✦ 聚拢' : '✦ 爆散';
 
         if (hgj_scattered) {
-            // 3D 方向爆散
+            var maxR = Math.max(hgj_W, hgj_H) * 0.9;
             for (var i = 0; i < hgj_particles.length; i++) {
                 var p = hgj_particles[i];
                 var ang = Math.random() * Math.PI * 2;
-                var sp = 2.5 + Math.random() * 9;
+                var sp = 3 + Math.random() * 11;
                 p.vx += Math.cos(ang) * sp;
                 p.vy += Math.sin(ang) * sp;
-                p.vz += (Math.random() - 0.5) * sp * 3.2;
+                p.vz += (Math.random() - 0.5) * sp * 3.4;
             }
         }
+    }
+
+    hgj_scatterBtn.addEventListener('click', hgj_toggleScatter);
+
+    hgj_pauseBtn.addEventListener('click', function () {
+        hgj_paused = !hgj_paused;
+        this.classList.toggle('hgj_on', hgj_paused);
+        this.textContent = hgj_paused ? '▶ 播放' : '⏸ 暂停';
     });
 
     hgj_forceInput.addEventListener('input', function () {
@@ -627,31 +773,63 @@
         hgj_forceVal.textContent = this.value;
     });
 
-    // 配色切换：同步更新页面光晕
-    document.querySelectorAll('.hgj_sw').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            document.querySelectorAll('.hgj_sw').forEach(function (b) { b.classList.remove('hgj_on'); });
-            this.classList.add('hgj_on');
-            hgj_paletteIndex = parseInt(this.getAttribute('data-p'), 10);
-            var bgList = hgj_palettes[hgj_paletteIndex].bg;
-            document.body.style.setProperty('--hgj_glow-1', bgList[0]);
-            document.body.style.setProperty('--hgj_glow-2', bgList[1]);
-            document.body.style.setProperty('--hgj_glow-3', bgList[2]);
-            hgj_sampleText();
-        });
+    // ===== 配色按钮 =====
+    hgj_palettes.forEach(function (p, i) {
+        var b = document.createElement('button');
+        b.className = 'hgj_sw' + (i === 0 ? ' hgj_on' : '');
+        b.title = p.name;
+        b.setAttribute('data-p', i);
+        b.setAttribute('type', 'button');
+        b.style.background = 'linear-gradient(135deg,' + p.colors[0] + ',' + p.colors[2] + ')';
+        hgj_paletteBox.appendChild(b);
     });
 
-    // 尺寸
+    hgj_paletteBox.addEventListener('click', function (e) {
+        var btn = e.target.closest('.hgj_sw');
+        if (!btn) return;
+        var idx = parseInt(btn.getAttribute('data-p'), 10);
+
+        var sws = hgj_paletteBox.querySelectorAll('.hgj_sw');
+        for (var i = 0; i < sws.length; i++) sws[i].classList.remove('hgj_on');
+        btn.classList.add('hgj_on');
+
+        hgj_paletteIndex = idx;
+        var p = hgj_palettes[idx];
+        hgj_glowRgb = hgj_hexToRgb(p.glow);
+        document.body.style.setProperty('--hgj_g1', p.bg[0]);
+        document.body.style.setProperty('--hgj_g2', p.bg[1]);
+        document.body.style.setProperty('--hgj_g3', p.bg[2]);
+
+        // 换色时重新采样，沙粒重聚一次
+        hgj_sampleText();
+        hgj_fadeStart = performance.now();
+        hgj_scattered = false;
+        hgj_scatterBtn.classList.remove('hgj_on');
+        hgj_scatterBtn.textContent = '✦ 爆散';
+    });
+
+    // ===== 键盘 =====
+    window.addEventListener('keydown', function (e) {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            hgj_toggleScatter();
+        } else if (e.key === 'p' || e.key === 'P') {
+            hgj_pauseBtn.click();
+        }
+    });
+
+    // ===== 尺寸变化 =====
     var hgj_resizeTimer = null;
     window.addEventListener('resize', function () {
         clearTimeout(hgj_resizeTimer);
-        hgj_resizeTimer = setTimeout(hgj_resize, 120);
+        hgj_resizeTimer = setTimeout(hgj_resize, 140);
     });
 
-    // 启动
+    // ===== 启动 =====
+    hgj_glowRgb = hgj_hexToRgb(hgj_palettes[0].glow);
     hgj_fadeStart = performance.now();
     hgj_resize();
-    requestAnimationFrame(hgj_render);
+    requestAnimationFrame(hgj_loop);
 })();
 </script>
 </body>
