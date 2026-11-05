@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-8 智能客服数据可视化大屏</title>
+<!-- 姓名：胡国静，日期：18-8 全屏三列式智能客服数据大屏 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: #03070d;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        color: #cfe8ff;
+    }
+    :root {
+        --hgj-cyan: #22d3ee;
+        --hgj-blue: #3b82f6;
+        --hgj-gold: #fbbf24;
+        --hgj-violet: #a855f7;
+        --hgj-pink: #f472b6;
+        --hgj-line: rgba(56,189,248,0.24);
+        --hgj-panel: rgba(8,20,34,0.72);
+    }
+
+    /* ===== 背景装饰 ===== */
+    .hgj_bg {
+        position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        background:
+            radial-gradient(70% 50% at 50% -8%, rgba(34,211,238,0.13) 0%, transparent 70%),
+            radial-gradient(50% 45% at 100% 100%, rgba(168,85,247,0.10) 0%, transparent 72%),
+            linear-gradient(rgba(56,189,248,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(56,189,248,0.045) 1px, transparent 1px),
+            #03070d;
+        background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    }
+    .hgj_scan {
+        position: fixed; left: 0; right: 0; height: 90px; z-index: 1; pointer-events: none;
+        background: linear-gradient(180deg, transparent, rgba(34,211,238,0.07), transparent);
+        animation: hgj_scan-move 7s linear infinite;
+    }
+    @keyframes hgj_scan-move {
+        0%   { top: -90px; }
+        100% { top: 100%; }
+    }
+
+    /* ===== 大屏骨架 ===== */
+    .hgj_screen { position: relative; z-index: 2; height: 100vh; display: flex; flex-direction: column; }
+
+    .hgj_header {
+        flex: none; height: 62px;
+        display: grid; grid-template-columns: 1fr auto 1fr;
+        align-items: center; gap: 1rem;
+        padding: 0 16px;
+        border-bottom: 1px solid var(--hgj-line);
+        background: linear-gradient(180deg, rgba(9,26,44,0.92), rgba(3,9,16,0.5));
+        backdrop-filter: blur(6px);
+    }
+    .hgj_header-left { display: flex; align-items: center; gap: 10px; }
+    .hgj_logo {
+        width: 26px; height: 26px; border-radius: 7px;
+        background: linear-gradient(135deg, var(--hgj-cyan), var(--hgj-blue));
+        box-shadow: 0 0 18px -4px rgba(34,211,238,0.9);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 13px; font-weight: 900; color: #04121d;
+    }
+    .hgj_sys { font-size: 0.74rem; letter-spacing: 0.22em; color: #6b8fae; }
+
+    .hgj_title {
+        text-align: center; font-size: clamp(1rem, 1.6vw, 1.5rem); font-weight: 800;
+        letter-spacing: 0.22em;
+        background: linear-gradient(90deg, #a5f3fc, #e0f7ff 40%, #67e8f9 65%, #a855f7);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        text-shadow: 0 0 26px rgba(34,211,238,0.28);
+        white-space: nowrap;
+    }
+    .hgj_header-right { display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+    .hgj_clock {
+        font-family: "Consolas", monospace; font-size: 0.78rem; color: #8fb8d6;
+        letter-spacing: 0.08em; white-space: nowrap;
+    }
+    .hgj_live {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 0.66rem; letter-spacing: 0.14em; color: #4ade80;
+    }
+    .hgj_live i {
+        width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+        box-shadow: 0 0 10px #4ade80; animation: hgj_blink 1.4s ease-in-out infinite;
+    }
+    @keyframes hgj_blink { 50% { opacity: 0.25; } }
+    .hgj_fsbtn {
+        padding: 0.42em 0.95em; font-family: inherit; font-size: 0.7rem; letter-spacing: 0.1em;
+        color: #a5f3fc; cursor: pointer;
+        background: rgba(34,211,238,0.1);
+        border: 1px solid rgba(34,211,238,0.42);
+        border-radius: 4px; transition: all 0.22s ease; white-space: nowrap;
+    }
+    .hgj_fsbtn:hover { background: rgba(34,211,238,0.22); box-shadow: 0 0 18px -6px rgba(34,211,238,0.9); }
+
+    /* ===== 三列布局 ===== */
+    .hgj_main {
+        flex: 1; min-height: 0;
+        display: grid;
+        grid-template-columns: 23.5% minmax(0, 1fr) 23.5%;
+        gap: 10px;
+        padding: 10px 12px 12px;
+    }
+    .hgj_col { display: grid; gap: 10px; min-height: 0; }
+    .hgj_col.left   { grid-template-rows: auto 1.05fr 1fr; }
+    .hgj_col.center { grid-template-rows: 1.62fr 1fr; }
+    .hgj_col.right  { grid-template-rows: 1fr 1.05fr 0.95fr; }
+
+    /* ===== 面板通用 ===== */
+    .hgj_panel {
+        position: relative; min-height: 0; display: flex; flex-direction: column;
+        background: var(--hgj-panel);
+        border: 1px solid var(--hgj-line);
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: inset 0 0 42px -18px rgba(34,211,238,0.45), 0 12px 30px -22px #000;
+    }
+    .hgj_panel::before {
+        content: ''; position: absolute; top: 0; left: 0; width: 16px; height: 16px;
+        border-top: 1px solid rgba(34,211,238,0.7); border-left: 1px solid rgba(34,211,238,0.7);
+        pointer-events: none;
+    }
+    .hgj_panel::after {
+        content: ''; position: absolute; right: 0; bottom: 0; width: 16px; height: 16px;
+        border-bottom: 1px solid rgba(34,211,238,0.7); border-right: 1px solid rgba(34,211,238,0.7);
+        pointer-events: none;
+    }
+    .hgj_panel-head {
+        flex: none; height: 32px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 12px;
+        border-bottom: 1px solid rgba(56,189,248,0.14);
+        background: linear-gradient(90deg, rgba(34,211,238,0.09), transparent 70%);
+    }
+    .hgj_panel-title {
+        display: flex; align-items: center; gap: 7px;
+        font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; color: #cdeaff;
+    }
+    .hgj_panel-title::before {
+        content: ''; width: 3px; height: 12px; border-radius: 2px;
+        background: linear-gradient(180deg, var(--hgj-cyan), var(--hgj-blue));
+        box-shadow: 0 0 10px rgba(34,211,238,0.85);
+    }
+    .hgj_panel-extra { font-family: "Consolas", monospace; font-size: 0.62rem; color: #4d6e88; letter-spacing: 0.1em; }
+    .hgj_panel-body { flex: 1; min-height: 0; position: relative; }
+    .hgj_chart { width: 100%; height: 100%; }
+
+    /* ===== KPI ===== */
+    .hgj_kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .hgj_kpi {
+        position: relative; padding: 10px 12px;
+        background: linear-gradient(150deg, rgba(13,38,60,0.85), rgba(5,14,24,0.9));
+        border: 1px solid rgba(56,189,248,0.2); border-radius: 6px;
+        overflow: hidden;
+    }
+    .hgj_kpi::before {
+        content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+        background: linear-gradient(180deg, var(--hgj-cyan), transparent);
+    }
+    .hgj_kpi-label { font-size: 0.64rem; color: #6b8fae; letter-spacing: 0.08em; }
+    .hgj_kpi-value {
+        margin-top: 5px; font-family: "Consolas", "Microsoft YaHei", sans-serif;
+        font-size: clamp(1.15rem, 1.7vw, 1.55rem); font-weight: 800; color: #e6fbff;
+        text-shadow: 0 0 18px rgba(34,211,238,0.5); line-height: 1.1;
+    }
+    .hgj_kpi-value small { font-size: 0.7rem; font-weight: 600; color: #67e8f9; margin-left: 3px; }
+    .hgj_kpi-trend { margin-top: 4px; font-size: 0.6rem; color: #4ade80; letter-spacing: 0.04em; }
+    .hgj_kpi-trend.down { color: #fb7185; }
+
+    /* ===== 排行 ===== */
+    .hgj_rank { padding: 8px 12px; height: 100%; display: flex; flex-direction: column; justify-content: space-around; }
+    .hgj_rank-row { display: flex; align-items: center; gap: 8px; font-size: 0.68rem; }
+    .hgj_rank-no {
+        width: 17px; height: 17px; flex: none; border-radius: 3px;
+        display: flex; align-items: center; justify-content: center;
+        font-family: "Consolas", monospace; font-size: 0.62rem;
+        background: rgba(34,211,238,0.14); color: #67e8f9;
+    }
+    .hgj_rank-row:nth-child(1) .hgj_rank-no { background: rgba(251,191,36,0.22); color: #fbbf24; }
+    .hgj_rank-name { width: 4.2em; flex: none; color: #a9c8de; }
+    .hgj_rank-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(56,189,248,0.12); overflow: hidden; }
+    .hgj_rank-bar span {
+        display: block; height: 100%; border-radius: 3px;
+        background: linear-gradient(90deg, rgba(34,211,238,0.5), #22d3ee);
+        box-shadow: 0 0 12px rgba(34,211,238,0.6);
+        width: 0; transition: width 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .hgj_rank-bar.gold span { background: linear-gradient(90deg, rgba(251,191,36,0.5), #fbbf24); box-shadow: 0 0 12px rgba(251,191,36,0.6); }
+    .hgj_rank-val { width: 3.1em; text-align: right; font-family: "Consolas", monospace; font-size: 0.66rem; color: #67e8f9; }
+
+    /* ===== 告警 / 日志 ===== */
+    .hgj_alerts { height: 100%; overflow: hidden; padding: 8px 12px; }
+    .hgj_alerts ul { list-style: none; animation: hgj_scroll-up 16s linear infinite; }
+    @keyframes hgj_scroll-up {
+        0%   { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
+    }
+    .hgj_alerts li {
+        display: flex; align-items: flex-start; gap: 7px;
+        padding: 5px 0; font-size: 0.66rem; line-height: 1.5em;
+        border-bottom: 1px dashed rgba(56,189,248,0.12);
+        color: #9fc0d8;
+    }
+    .hgj_alerts li i {
+        width: 5px; height: 5px; margin-top: 5px; flex: none; border-radius: 50%;
+        background: #fbbf24; box-shadow: 0 0 8px #fbbf24;
+    }
+    .hgj_alerts li.hgj-critical i { background: #fb7185; box-shadow: 0 0 8px #fb7185; }
+    .hgj_alerts li.hgj-normal i { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+    .hgj_alerts time { margin-left: auto; font-family: "Consolas", monospace; font-size: 0.6rem; color: #4d6e88; white-space: nowrap; }
+
+    .hgj_logs {
+        height: 100%; padding: 8px 12px; overflow: hidden;
+        font-family: "Consolas", monospace; font-size: 0.63rem; line-height: 1.85em;
+        color: #7fa4bf;
+    }
+    .hgj_logs div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hgj_logs .hgj-lg-time { color: #4d6e88; margin-right: 6px; }
+    .hgj_logs .hgj-lg-ok { color: #4ade80; }
+    .hgj_logs .hgj-lg-warn { color: #fbbf24; }
+
+    /* ===== 图表 tooltip 统一样式 ===== */
+    .hgj-chart-tip {
+        background: rgba(4,14,24,0.94) !important;
+        border: 1px solid rgba(34,211,238,0.45) !important;
+        border-radius: 4px !important;
+        color: #cfe8ff !important;
+        font-size: 11px !important;
+        box-shadow: 0 10px 26px -12px #000 !important;
+    }
+
+    @media (max-width: 1180px) {
+        .hgj_main { grid-template-columns: 26% minmax(0, 1fr) 26%; gap: 8px; padding: 8px; }
+        .hgj_title { letter-spacing: 0.1em; }
+        .hgj_sys { display: none; }
+    }
+    @media (max-width: 860px) {
+        .hgj_main { grid-template-columns: 1fr; grid-template-rows: none; overflow-y: auto; }
+        .hgj_col { grid-template-rows: none; grid-auto-rows: minmax(180px, auto); }
+        html, body { overflow: auto; }
+        .hgj_screen { height: auto; min-height: 100vh; }
+    }
+</style>
+</head>
+<body>
+<div class="hgj_bg"></div>
+<div class="hgj_scan"></div>
+
+<div class="hgj_screen">
+    <header class="hgj_header">
+        <div class="hgj_header-left">
+            <div class="hgj_logo">HGJ</div>
+            <span class="hgj_sys">CUSTOMER SERVICE · DATA CENTER</span>
+        </div>
+        <div class="hgj_title">智能客服实时运营监控中心</div>
+        <div class="hgj_header-right">
+            <span class="hgj_live"><i></i>LIVE</span>
+            <span class="hgj_clock" id="hgj_clock">--</span>
+            <button class="hgj_fsbtn" id="hgj_fs">⛶ 全屏</button>
+        </div>
+    </header>
+
+    <main class="hgj_main">
+        <!-- ========== 左列 ========== -->
+        <aside class="hgj_col left">
+            <div class="hgj_kpis">
+                <div class="hgj_kpi">
+                    <div class="hgj_kpi-label">今日会话总量</div>
+                    <div class="hgj_kpi-value" id="hgj_kpi-session">0<small>次</small></div>
+                    <div class="hgj_kpi-trend">▲ 较昨日 12.6%</div>
+                </div>
+                <div class="hgj_kpi">
+                    <div class="hgj_kpi-label">机器人解决率</div>
+                    <div class="hgj_kpi-value" id="hgj_kpi-robot">0<small>%</small></div>
+                    <div class="hgj_kpi-trend">▲ 较昨日 3.1%</div>
+                </div>
+                <div class="hgj_kpi">
+                    <div class="hgj_kpi-label">平均首响时长</div>
+                    <div class="hgj_kpi-value" id="hgj_kpi-resp">0<small>s</small></div>
+                    <div class="hgj_kpi-trend down">▼ 较昨日 0.4s</div>
+                </div>
+                <div class="hgj_kpi">
+                    <div class="hgj_kpi-label">转人工率</div>
+                    <div class="hgj_kpi-value" id="hgj_kpi-transfer">0<small>%</small></div>
+                    <div class="hgj_kpi-trend down">▲ 较昨日 1.2%</div>
+                </div>
+            </div>
+
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">服务渠道分布</div>
+                    <span class="hgj_panel-extra">CHANNEL</span>
+                </div>
+                <div class="hgj_panel-body"><div class="hgj_chart" id="hgj_chart-channel"></div></div>
+            </div>
+
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">客服响应排行</div>
+                    <span class="hgj_panel-extra">TOP 5</span>
+                </div>
+                <div class="hgj_panel-body">
+                    <div class="hgj_rank" id="hgj_rank"></div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ========== 中列 ========== -->
+        <section class="hgj_col center">
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">全国服务请求分布 · 区域热力</div>
+                    <span class="hgj_panel-extra">GEO HEATMAP · 实时连线</span>
+                </div>
+                <div class="hgj_panel-body"><div class="hgj_chart" id="hgj_chart-map"></div></div>
+            </div>
+
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">会话量与解决率趋势</div>
+                    <span class="hgj_panel-extra">LAST 12 HOURS</span>
+                </div>
+                <div class="hgj_panel-body"><div class="hgj_chart" id="hgj_chart-trend"></div></div>
+            </div>
+        </section>
+
+        <!-- ========== 右列 ========== -->
+        <aside class="hgj_col right">
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">服务能力雷达</div>
+                    <span class="hgj_panel-extra">WEEKLY</span>
+                </div>
+                <div class="hgj_panel-body"><div class="hgj_chart" id="hgj_chart-radar"></div></div>
+            </div>
+
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">用户意图 TOP 6</div>
+                    <span class="hgj_panel-extra">INTENT</span>
+                </div>
+                <div class="hgj_panel-body"><div class="hgj_chart" id="hgj_chart-intent"></div></div>
+            </div>
+
+            <div class="hgj_panel">
+                <div class="hgj_panel-head">
+                    <div class="hgj_panel-title">实时告警</div>
+                    <span class="hgj_panel-extra">ALERT</span>
+                </div>
+                <div class="hgj_panel-body">
+                    <div class="hgj_alerts" id="hgj_alerts"></div>
+                </div>
+            </div>
+        </aside>
+    </main>
+</div>
+
+<script src="cdn/echarts.js"></script>
+<script src="cdn/china-geo.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ===== 常量与工具 =====
+    var hgj_charts = {};        // 所有 echarts 实例
+    var hgj_refreshTimer = null;
+
+    var hgj_themeText = { color: '#9fc0d8', fontSize: 10 };
+    var hgj_splitLine = { lineStyle: { color: 'rgba(56,189,248,0.16)' } };
+    var hgj_axisLine = { lineStyle: { color: 'rgba(56,189,248,0.28)' } };
+
+    function hgj_init(id, option) {
+        var el = document.getElementById('hgj_chart-' + id);
+        if (!el) return null;
+        var inst = echarts.init(el, null, { renderer: 'canvas' });
+        inst.setOption(option);
+        hgj_charts[id] = inst;
+        return inst;
+    }
+
+    // ===== 时钟 =====
+    function hgj_tickClock() {
+        var d = new Date();
+        var p2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+        document.getElementById('hgj_clock').textContent =
+            d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' +
+            p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds());
+    }
+    hgj_tickClock();
+    setInterval(hgj_tickClock, 1000);
+
+    // ===== 全屏 =====
+    var hgj_fsBtn = document.getElementById('hgj_fs');
+    hgj_fsBtn.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+            var p = document.documentElement.requestFullscreen();
+            if (p && p.catch) p.catch(function () {});
+        } else {
+            document.exitFullscreen();
+        }
+    });
+    document.addEventListener('fullscreenchange', function () {
+        hgj_fsBtn.textContent = document.fullscreenElement ? '⛶ 退出全屏' : '⛶ 全屏';
+        setTimeout(hgj_resizeAll, 260);
+    });
+
+    // ===== KPI 数字滚动 =====
+    function hgj_count(el, target, decimals, suffix) {
+        var start = performance.now();
+        var dur = 1400;
+        var from = 0;
+        function step(ts) {
+            var p = Math.min(1, (ts - start) / dur);
+            var e = 1 - Math.pow(1 - p, 3);
+            var val = from + (target - from) * e;
+            el.innerHTML = (decimals ? val.toFixed(decimals) : Math.round(val).toLocaleString()) +
+                '<small>' + suffix + '</small>';
+            if (p < 1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    }
+    hgj_count(document.getElementById('hgj_kpi-session'), 18642, 0, '次');
+    hgj_count(document.getElementById('hgj_kpi-robot'), 78.4, 1, '%');
+    hgj_count(document.getElementById('hgj_kpi-resp'), 1.8, 1, 's');
+    hgj_count(document.getElementById('hgj_kpi-transfer'), 21.6, 1, '%');
+
+    // ===== 客服排行 =====
+    var hgj_agents = [
+        { name: '李静', value: 142, ratio: 100 },
+        { name: '王磊', value: 126, ratio: 89 },
+        { name: '陈曦', value: 108, ratio: 76 },
+        { name: '张敏', value: 95, ratio: 67 },
+        { name: '赵宇', value: 82, ratio: 58 }
+    ];
+    var rankBox = document.getElementById('hgj_rank');
+    hgj_agents.forEach(function (a, i) {
+        var row = document.createElement('div');
+        row.className = 'hgj_rank-row';
+        row.innerHTML =
+            '<div class="hgj_rank-no">' + (i + 1) + '</div>' +
+            '<div class="hgj_rank-name">' + a.name + '</div>' +
+            '<div class="hgj_rank-bar' + (i === 0 ? ' gold' : '') + '"><span data-w="' + a.ratio + '"></span></div>' +
+            '<div class="hgj_rank-val">' + a.value + ' 单</div>';
+        rankBox.appendChild(row);
+    });
+    setTimeout(function () {
+        Array.prototype.forEach.call(document.querySelectorAll('.hgj_rank-bar span'), function (s, i) {
+            setTimeout(function () { s.style.width = s.getAttribute('data-w') + '%'; }, i * 90);
+        });
+    }, 400);
+
+    // ===== 告警列表（两份用于无缝滚动）=====
+    var hgj_alertData = [
+        { lv: 'critical', text: '华东节点响应延迟超过 800ms', time: '14:32' },
+        { lv: 'warn', text: '转人工队列积压 36 人', time: '14:28' },
+        { lv: 'normal', text: '知识库索引已重建完成', time: '14:21' },
+        { lv: 'warn', text: '意图识别置信度低于阈值 12 次', time: '14:15' },
+        { lv: 'normal', text: '客服「李静」上线，技能组已扩容', time: '14:09' },
+        { lv: 'critical', text: '短信通道下发失败率升至 4.2%', time: '14:02' }
+    ];
+    var alertBox = document.getElementById('hgj_alerts');
+    var html = '<ul>';
+    for (var r = 0; r < 2; r++) {
+        hgj_alertData.forEach(function (a) {
+            html += '<li class="hgj-' + a.lv + '"><i></i><span>' + a.text + '</span><time>' + a.time + '</time></li>';
+        });
+    }
+    html += '</ul>';
+    alertBox.innerHTML = html;
+
+    // ===== 地图：区域热力 + 涟漪散点 + 飞线 =====
+    var hgj_cities = [
+        { name: '北京', value: [116.40, 39.90, 168] },
+        { name: '上海', value: [121.47, 31.23, 152] },
+        { name: '广州', value: [113.26, 23.13, 138] },
+        { name: '深圳', value: [114.06, 22.55, 126] },
+        { name: '成都', value: [104.07, 30.67, 108] },
+        { name: '杭州', value: [120.15, 30.28, 96] },
+        { name: '武汉', value: [114.31, 30.60, 88] },
+        { name: '西安', value: [108.94, 34.34, 74] },
+        { name: '沈阳', value: [123.43, 41.80, 58] },
+        { name: '昆明', value: [102.83, 24.88, 46] }
+    ];
+    var hgj_lines = hgj_cities.slice(1).map(function (c) {
+        return {
+            coords: [[116.40, 39.90], [c.value[0], c.value[1]]],
+            value: c.value[2]
+        };
+    });
+
+    if (echarts.registerMap && window.HGJ_CHINA_GEO) {
+        echarts.registerMap('china', window.HGJ_CHINA_GEO);
+    }
+
+    hgj_init('map', {
+        animationDuration: 1000,
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(4,14,24,0.95)',
+            borderColor: 'rgba(34,211,238,0.5)',
+            textStyle: { color: '#cfe8ff', fontSize: 11 },
+            formatter: function (p) {
+                if (p.seriesType === 'effectScatter') {
+                    return p.name + '<br/>实时会话 ' + p.value[2] + ' 路';
+                }
+                return p.name || '';
+            }
+        },
+        geo: {
+            map: 'china',
+            roam: false,
+            zoom: 1.18,
+            layoutCenter: ['50%', '52%'],
+            layoutSize: '116%',
+            itemStyle: {
+                areaColor: 'rgba(9,32,52,0.92)',
+                borderColor: 'rgba(56,189,248,0.55)',
+                borderWidth: 0.8,
+                shadowColor: 'rgba(34,211,238,0.45)',
+                shadowBlur: 18,
+                shadowOffsetY: 4
+            },
+            emphasis: {
+                itemStyle: { areaColor: 'rgba(34,211,238,0.32)' },
+                label: { show: true, color: '#e6fbff', fontSize: 11 }
+            },
+            label: { show: false }
+        },
+        series: [
+            {
+                name: '服务强度',
+                type: 'effectScatter',
+                coordinateSystem: 'geo',
+                zlevel: 2,
+                data: hgj_cities,
+                symbolSize: function (val) { return Math.max(6, val[2] / 16); },
+                rippleEffect: { brushType: 'stroke', scale: 3.6, period: 4 },
+                itemStyle: {
+                    color: '#22d3ee',
+                    shadowBlur: 16,
+                    shadowColor: 'rgba(34,211,238,0.95)'
+                },
+                label: { show: false }
+            },
+            {
+                name: '调度连线',
+                type: 'lines',
+                coordinateSystem: 'geo',
+                zlevel: 3,
+                effect: {
+                    show: true,
+                    period: 4.2,
+                    trailLength: 0.35,
+                    symbolSize: 3,
+                    color: '#fbbf24'
+                },
+                lineStyle: {
+                    color: 'rgba(251,191,36,0.55)',
+                    width: 1.2,
+                    curveness: 0.24,
+                    opacity: 0.75
+                },
+                data: hgj_lines
+            }
+        ]
+    });
+
+    // ===== 趋势：柱 + 双折线 =====
+    var hgj_hours = ['08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'];
+    var hgj_volume = [820, 1120, 1460, 1720, 1580, 1390, 1660, 1890, 2040, 1980, 2210, 1860];
+    var hgj_rate = [72, 74, 76, 77, 78, 79, 78.5, 80, 81, 80.5, 82, 81];
+
+    hgj_init('trend', {
+        animationDuration: 900,
+        grid: { left: 42, right: 46, top: 32, bottom: 26 },
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: 'rgba(4,14,24,0.95)',
+            borderColor: 'rgba(34,211,238,0.5)',
+            textStyle: { color: '#cfe8ff', fontSize: 11 }
+        },
+        legend: {
+            right: 8, top: 2, itemWidth: 9, itemHeight: 9, itemGap: 12,
+            textStyle: { color: '#8fb8d6', fontSize: 10 },
+            data: ['会话量', '智能解决率']
+        },
+        xAxis: {
+            type: 'category',
+            data: hgj_hours,
+            axisLine: hgj_axisLine,
+            axisTick: { show: false },
+            axisLabel: Object.assign({}, hgj_themeText)
+        },
+        yAxis: [
+            {
+                type: 'value',
+                name: '会话量',
+                nameTextStyle: { color: '#4d6e88', fontSize: 10 },
+                splitLine: hgj_splitLine,
+                axisLine: { show: false },
+                axisLabel: Object.assign({}, hgj_themeText)
+            },
+            {
+                type: 'value',
+                name: '解决率(%)',
+                min: 60, max: 90,
+                nameTextStyle: { color: '#4d6e88', fontSize: 10 },
+                splitLine: hgj_splitLine,
+                axisLine: { show: false },
+                axisLabel: Object.assign({}, hgj_themeText)
+            }
+        ],
+        series: [
+            {
+                name: '会话量',
+                type: 'bar',
+                barWidth: '46%',
+                data: hgj_volume,
+                itemStyle: {
+                    borderRadius: [3, 3, 0, 0],
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(34,211,238,0.95)' },
+                        { offset: 1, color: 'rgba(34,211,238,0.08)' }
+                    ])
+                }
+            },
+            {
+                name: '智能解决率',
+                type: 'line',
+                yAxisIndex: 1,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 5,
+                data: hgj_rate,
+                lineStyle: { width: 2, color: '#fbbf24', shadowBlur: 12, shadowColor: 'rgba(251,191,36,0.7)' },
+                itemStyle: { color: '#fbbf24' },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        { offset: 0, color: 'rgba(251,191,36,0.22)' },
+                        { offset: 1, color: 'rgba(251,191,36,0)' }
+                    ])
+                }
+            }
+        ]
+    });
+
+    // ===== 渠道分布环形 =====
+    hgj_init('channel', {
+        animationDuration: 900,
+        tooltip: {
+            trigger: 'item',
+            backgroundColor: 'rgba(4,14,24,0.95)',
+            borderColor: 'rgba(34,211,238,0.5)',
+            textStyle: { color: '#cfe8ff', fontSize: 11 },
+            formatter: '{b}<br/>{c} 次 ({d}%)'
+        },
+        legend: {
+            bottom: 4, itemWidth: 8, itemHeight: 8, itemGap: 10,
+            textStyle: { color: '#8fb8d6', fontSize: 10 },
+            data: ['网页', 'APP', '微信', '电话']
+        },
+        series: [{
+            type: 'pie',
+            radius: ['42%', '66%'],
+            center: ['50%', '43%'],
+            avoidLabelOverlap: true,
+            itemStyle: { borderColor: 'rgba(3,9,16,0.9)', borderWidth: 2 },
+            label: { show: false },
+            emphasis: {
+                label: {
+                    show: true, fontSize: 12, fontWeight: 'bold', color: '#e6fbff'
+                },
+                scale: true, scaleSize: 6
+            },
+            data: [
+                { value: 7420, name: '网页', itemStyle: { color: '#22d3ee' } },
+                { value: 5360, name: 'APP', itemStyle: { color: '#3b82f6' } },
+                { value: 3860, name: '微信', itemStyle: { color: '#a855f7' } },
+                { value: 1990, name: '电话', itemStyle: { color: '#fbbf24' } }
+            ]
+        }]
+    });
+
+    // ===== 能力雷达 =====
+    hgj_init('radar', {
+        animationDuration: 900,
+        tooltip: {
+            backgroundColor: 'rgba(4,14,24,0.95)',
+            borderColor: 'rgba(34,211,238,0.5)',
+            textStyle: { color: '#cfe8ff', fontSize: 11 }
+        },
+        legend: {
+            top: 2, right: 8, itemWidth: 8, itemHeight: 8,
+            textStyle: { color: '#8fb8d6', fontSize: 10 },
+            data: ['本周', '上周']
+        },
+        radar: {
+            center: ['50%', '54%'],
+            radius: '62%',
+            splitNumber: 4,
+            axisName: { color: '#7fa4bf', fontSize: 10 },
+            splitLine: { lineStyle: { color: 'rgba(56,189,248,0.18)' } },
+            splitArea: { areaStyle: { color: ['rgba(10,30,48,0.25)', 'rgba(6,18,30,0.35)'] } },
+            axisLine: { lineStyle: { color: 'rgba(56,189,248,0.22)' } },
+            indicator: [
+                { name: '响应速度', max: 100 },
+                { name: '解决率', max: 100 },
+                { name: '满意度', max: 100 },
+                { name: '知识覆盖', max: 100 },
+                { name: '人力利用', max: 100 }
+            ]
+        },
+        series: [{
+            type: 'radar',
+            symbolSize: 4,
+            data: [
+                {
+                    value: [86, 78, 82, 88, 74],
+                    name: '本周',
+                    lineStyle: { color: '#22d3ee', width: 1.6 },
+                    itemStyle: { color: '#22d3ee' },
+                    areaStyle: { color: 'rgba(34,211,238,0.22)' }
+                },
+                {
+                    value: [74, 70, 76, 72, 68],
+                    name: '上周',
+                    lineStyle: { color: '#a855f7', width: 1.2, type: 'dashed' },
+                    itemStyle: { color: '#a855f7' }
+                }
+            ]
+        }]
+    });
+
+    // ===== 意图 TOP6 横向条形 =====
+    hgj_init('intent', {
+        animationDuration: 900,
+        grid: { left: 66, right: 34, top: 8, bottom: 6 },
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: { type: 'shadow' },
+            backgroundColor: 'rgba(4,14,24,0.95)',
+            borderColor: 'rgba(34,211,238,0.5)',
+            textStyle: { color: '#cfe8ff', fontSize: 11 }
+        },
+        xAxis: {
+            type: 'value',
+            splitLine: hgj_splitLine,
+            axisLine: { show: false },
+            axisLabel: Object.assign({}, hgj_themeText)
+        },
+        yAxis: {
+            type: 'category',
+            inverse: true,
+            data: ['售后退款', '订单查询', '优惠规则', '物流进度', '账号问题', '发票开具'],
+            axisLine: { show: false },
+            axisTick: { show: false },
+            axisLabel: { color: '#9fc0d8', fontSize: 10 }
+        },
+        series: [{
+            type: 'bar',
+            barWidth: 9,
+            data: [2640, 2180, 1720, 1480, 1120, 860],
+            itemStyle: {
+                borderRadius: [0, 4, 4, 0],
+                color: new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+                    { offset: 0, color: 'rgba(34,211,238,0.15)' },
+                    { offset: 1, color: '#22d3ee' }
+                ])
+            },
+            label: {
+                show: true, position: 'right', color: '#67e8f9',
+                fontFamily: 'Consolas', fontSize: 10
+            }
+        }]
+    });
+
+    // ===== 实时日志 =====
+    var logBox = document.createElement('div');
+    var hgj_logMsgs = [
+        ['normal', 'INTENT 命中知识库 #1024，自动回复完成'],
+        ['ok', 'SESSION 8f2a91 转人工成功，分配至 李静'],
+        ['warn', 'NLU 置信度 0.71，触发兜底话术'],
+        ['ok', 'KNOWLEDGE 索引增量更新 128 条'],
+        ['normal', 'CHANNEL web 会话并发 2,140'],
+        ['ok', 'MESSAGE 队列消费速率 1,860/s']
+    ];
+    // 日志面板挂在右列第三个面板中（追加到告警下方不方便，改为独立滚动块）
+    // 为保持三列行数一致，日志并入告警面板下方的小区域
+    var alertPanel = alertBox.parentNode.parentNode;
+    var logPanel = document.createElement('div');
+    logPanel.style.cssText = 'height:38%;border-top:1px solid rgba(56,189,248,0.12);position:relative;z-index:1;background:rgba(3,9,16,0.4)';
+    logBox.className = 'hgj_logs';
+    logPanel.appendChild(logBox);
+    alertPanel.appendChild(logPanel);
+
+    function hgj_addLog() {
+        var d = new Date();
+        var p2 = function (n) { return n < 10 ? '0' + n : '' + n; };
+        var m = hgj_logMsgs[Math.floor(Math.random() * hgj_logMsgs.length)];
+        var line = document.createElement('div');
+        line.innerHTML = '<span class="hgj-lg-time">' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ':' + p2(d.getSeconds()) + '</span>' +
+            '<span class="' + (m[0] === 'ok' ? 'hgj-lg-ok' : (m[0] === 'warn' ? 'hgj-lg-warn' : '')) + '">' + m[1] + '</span>';
+        logBox.appendChild(line);
+        while (logBox.children.length > 6) logBox.removeChild(logBox.firstChild);
+    }
+    hgj_addLog(); hgj_addLog(); hgj_addLog();
+    setInterval(hgj_addLog, 2600);
+
+    // ===== 数据定时刷新 =====
+    hgj_refreshTimer = setInterval(function () {
+        // 趋势数据滚动
+        var v = Math.max(600, Math.min(2400, hgj_volume[hgj_volume.length - 1] + (Math.random() - 0.5) * 320));
+        hgj_volume.shift(); hgj_volume.push(Math.round(v));
+        var r = Math.max(70, Math.min(88, hgj_rate[hgj_rate.length - 1] + (Math.random() - 0.5) * 1.6));
+        hgj_rate.shift(); hgj_rate.push(+r.toFixed(1));
+
+        hgj_charts.trend.setOption({
+            series: [
+                { data: hgj_volume.slice() },
+                { data: hgj_rate.slice() }
+            ]
+        });
+
+        // 雷达轻微波动
+        hgj_charts.radar.setOption({
+            series: [{
+                data: [
+                    { value: [86 + Math.random() * 4, 78 + Math.random() * 3, 82 + Math.random() * 3, 88, 74 + Math.random() * 4], name: '本周' },
+                    { value: [74, 70, 76, 72, 68], name: '上周' }
+                ]
+            }]
+        });
+    }, 4200);
+
+    // ===== 尺寸自适应 =====
+    function hgj_resizeAll() {
+        Object.keys(hgj_charts).forEach(function (k) {
+            hgj_charts[k].resize();
+        });
+    }
+    var hgj_rzTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(hgj_rzTimer);
+        hgj_rzTimer = setTimeout(hgj_resizeAll, 140);
+    });
+
+    // 布局完成后再校正一次
+    setTimeout(hgj_resizeAll, 350);
+})();
+</script>
+</body>
+</html>

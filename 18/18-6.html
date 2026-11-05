@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-6 Mermaid 智能客服流程图与 ER 图</title>
+<!-- 姓名：胡国静，日期：18-6 Mermaid 智能客服会话流转流程图与系统 ER 图 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        background: #06080e;
+        color: #e2e8f0;
+        min-height: 100vh;
+        background-image:
+            radial-gradient(60% 40% at 50% 0%, rgba(34,211,238,0.09) 0%, transparent 70%),
+            linear-gradient(rgba(148,163,184,0.045) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148,163,184,0.045) 1px, transparent 1px);
+        background-size: 100% 100%, 42px 42px, 42px 42px;
+    }
+
+    .hgj_back {
+        position: fixed; top: 1.1rem; right: 1.2rem; z-index: 100;
+        padding: 0.5em 1.1em; font-size: 0.76rem; letter-spacing: 0.04em;
+        color: #cbd5e1; text-decoration: none;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(148,163,184,0.24);
+        border-radius: 2em; backdrop-filter: blur(10px);
+        transition: all 0.26s ease;
+    }
+    .hgj_back:hover { color: #67e8f9; border-color: rgba(103,232,249,0.65); transform: translateY(-2px); }
+
+    .hgj_wrap { max-width: 1560px; margin: 0 auto; padding: 3.4rem 1.4rem 3rem; }
+
+    .hgj_head { margin-bottom: 1.6rem; }
+    .hgj_head h1 {
+        font-size: clamp(1.4rem, 3vw, 2.1rem); font-weight: 800; letter-spacing: 0.02em;
+        background: linear-gradient(135deg, #e2f8ff, #67e8f9 45%, #a855f7);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hgj_head p { margin-top: 0.55rem; font-size: 0.82rem; color: #7c8798; letter-spacing: 0.05em; }
+    .hgj_head p b { color: #67e8f9; font-weight: 600; }
+
+    .hgj_card {
+        position: relative; margin-bottom: 1.5rem;
+        background: linear-gradient(160deg, rgba(17,24,39,0.82), rgba(8,12,20,0.9));
+        border: 1px solid rgba(148,163,184,0.18);
+        border-radius: 1rem;
+        box-shadow: 0 24px 60px -34px rgba(0,0,0,0.95);
+        overflow: hidden;
+    }
+    .hgj_card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(103,232,249,0.6), rgba(168,85,247,0.4), transparent);
+    }
+    .hgj_card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+        padding: 0.95rem 1.2rem; flex-wrap: wrap;
+        border-bottom: 1px solid rgba(148,163,184,0.12);
+        background: rgba(15,23,42,0.5);
+    }
+    .hgj_card-title { display: flex; align-items: center; gap: 0.65rem; font-size: 0.98rem; font-weight: 700; }
+    .hgj_card-title .hgj_dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #67e8f9; box-shadow: 0 0 10px rgba(103,232,249,0.9);
+    }
+    .hgj_card-title .hgj_no {
+        font-family: "Consolas", monospace; font-size: 0.68rem; letter-spacing: 0.14em;
+        color: #475569; border: 1px solid rgba(148,163,184,0.24);
+        padding: 0.15em 0.5em; border-radius: 0.35em;
+    }
+    .hgj_card-desc { font-size: 0.74rem; color: #7c8798; letter-spacing: 0.04em; }
+
+    .hgj_tools { display: flex; align-items: center; gap: 0.4rem; }
+    .hgj_zoom-btn {
+        width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+        font-family: inherit; font-size: 0.82rem; line-height: 1;
+        color: #cbd5e1; cursor: pointer;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(148,163,184,0.24);
+        border-radius: 0.4em; transition: all 0.22s ease;
+    }
+    .hgj_zoom-btn:hover { color: #67e8f9; border-color: rgba(103,232,249,0.6); background: rgba(103,232,249,0.1); }
+    .hgj_zoom-val {
+        min-width: 3.1em; text-align: center; font-family: "Consolas", monospace;
+        font-size: 0.7rem; color: #94a3b8;
+    }
+
+    .hgj_view {
+        position: relative; padding: 1.4rem 1rem; overflow: auto;
+        max-height: 68vh; min-height: 260px;
+        display: flex; align-items: flex-start; justify-content: center;
+        scrollbar-width: thin; scrollbar-color: #334155 transparent;
+    }
+    .hgj_view::-webkit-scrollbar { width: 8px; height: 8px; }
+    .hgj_view::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    .hgj_view::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* mermaid 生成的 svg */
+    .hgj_view svg { max-width: none !important; transition: width 0.18s ease, height 0.18s ease; }
+    .hgj_view svg .hgj-flow-node text,
+    .hgj_view svg text { font-family: "Microsoft YaHei", "PingFang SC", sans-serif !important; }
+
+    .hgj_note {
+        padding: 0.85rem 1.2rem 1rem; border-top: 1px solid rgba(148,163,184,0.1);
+        font-size: 0.73rem; line-height: 1.85em; color: #7c8798; letter-spacing: 0.02em;
+        background: rgba(2,6,14,0.5);
+    }
+    .hgj_note b { color: #94a3b8; font-weight: 600; }
+    .hgj_note code {
+        font-family: "Consolas", monospace; font-size: 0.72rem; color: #67e8f9;
+        background: rgba(103,232,249,0.08); padding: 0.1em 0.4em; border-radius: 0.3em;
+    }
+
+    .hgj_loading {
+        display: flex; align-items: center; gap: 0.6rem;
+        font-size: 0.8rem; color: #64748b; letter-spacing: 0.08em;
+    }
+    .hgj_loading i {
+        width: 12px; height: 12px; border-radius: 50%;
+        border: 2px solid rgba(103,232,249,0.25); border-top-color: #67e8f9;
+        animation: hgj_spin 0.8s linear infinite;
+    }
+    @keyframes hgj_spin { to { transform: rotate(360deg); } }
+
+    .hgj_error {
+        padding: 0.9rem 1.1rem; font-size: 0.78rem; line-height: 1.7em;
+        color: #fca5a5; background: rgba(239,68,68,0.08);
+        border: 1px solid rgba(239,68,68,0.28); border-radius: 0.6rem;
+        max-width: 720px;
+    }
+
+    @media (max-width: 720px) {
+        .hgj_wrap { padding: 3rem 0.8rem 2rem; }
+        .hgj_view { padding: 1rem 0.6rem; }
+        .hgj_card-head { padding: 0.8rem 0.9rem; }
+    }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <h1>智能客服系统 · 架构图谱</h1>
+        <p>基于 <b>Mermaid</b> 本地渲染 ｜ 会话全流程与核心数据实体关系</p>
+    </div>
+
+    <!-- 图一：会话流转流程图 -->
+    <section class="hgj_card">
+        <div class="hgj_card-head">
+            <div>
+                <div class="hgj_card-title">
+                    <span class="hgj_dot"></span>图一 · 客服会话流转流程图
+                    <span class="hgj_no">FLOWCHART</span>
+                </div>
+                <div class="hgj_card-desc">用户发起 → 意图识别 → 智能回复 → 人工转接 → 会话归档</div>
+            </div>
+            <div class="hgj_tools" data-tools="flow">
+                <button class="hgj_zoom-btn" data-act="minus" type="button">−</button>
+                <span class="hgj_zoom-val">100%</span>
+                <button class="hgj_zoom-btn" data-act="plus" type="button">+</button>
+                <button class="hgj_zoom-btn" data-act="reset" type="button">⟲</button>
+            </div>
+        </div>
+        <div class="hgj_view" id="hgj_flow-view">
+            <div class="hgj_loading"><i></i>正在渲染流程图…</div>
+        </div>
+        <div class="hgj_note">
+            <b>流程说明：</b>会话先由多渠道接入并落库，<code>NLU</code> 意图识别命中知识库后生成智能回复；
+            置信度低于阈值或无法识别时进入 <b>人工转接队列</b>，由客服接手，未解决则升级工单；
+            结束后统一归档并触发满意度评价与质检。
+        </div>
+    </section>
+
+    <!-- 图二：系统 ER 实体关系图 -->
+    <section class="hgj_card">
+        <div class="hgj_card-head">
+            <div>
+                <div class="hgj_card-title">
+                    <span class="hgj_dot" style="background:#a855f7;box-shadow:0 0 10px rgba(168,85,247,0.9)"></span>
+                    图二 · 系统 ER 实体关系图
+                    <span class="hgj_no">ER DIAGRAM</span>
+                </div>
+                <div class="hgj_card-desc">用户 · 会话 · 消息 · 客服 · 转接 · 知识库 六张核心表</div>
+            </div>
+            <div class="hgj_tools" data-tools="er">
+                <button class="hgj_zoom-btn" data-act="minus" type="button">−</button>
+                <span class="hgj_zoom-val">100%</span>
+                <button class="hgj_zoom-btn" data-act="plus" type="button">+</button>
+                <button class="hgj_zoom-btn" data-act="reset" type="button">⟲</button>
+            </div>
+        </div>
+        <div class="hgj_view" id="hgj_er-view">
+            <div class="hgj_loading"><i></i>正在渲染 ER 图…</div>
+        </div>
+        <div class="hgj_note">
+            <b>关系说明：</b>一个 <code>USER</code> 可发起多个 <code>SESSION</code>，一个会话包含多条 <code>MESSAGE</code>；
+            客服 <code>AGENT</code> 可接待多个会话并处理多条 <code>TRANSFER</code> 转接记录；
+            <code>KNOWLEDGE</code> 知识条目用于命中并生成智能回复内容。
+        </div>
+    </section>
+</div>
+
+<script src="cdn/mermaid.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ===== 流程图定义 =====
+    var hgj_flowDef = [
+        'flowchart TD',
+        '    A(["用户发起咨询"]) --> B{"接入渠道识别"}',
+        '    B -->|"网页 / APP / 小程序"| C["创建会话 Session"]',
+        '    B -->|"微信公众号 / 电话"| C',
+        '',
+        '    subgraph S1["② 智能客服处理层"]',
+        '        C --> D["消息入库 MESSAGE"]',
+        '        D --> E{"意图识别 NLU"}',
+        '        E -->|"命中标准意图"| F["知识库检索 KNOWLEDGE"]',
+        '        F --> G["生成智能回复"]',
+        '        G --> H{"置信度 ≥ 0.85 ?"}',
+        '        H -->|"是"| I["直接回复用户"]',
+        '        E -->|"无法识别"| J["转入人工队列 TRANSFER"]',
+        '        H -->|"否"| J',
+        '    end',
+        '',
+        '    subgraph S2["③ 人工客服处理层"]',
+        '        J --> K["人工客服接入 AGENT"]',
+        '        K --> L{"用户问题是否解决 ?"}',
+        '        L -->|"已解决"| M["结束会话"]',
+        '        L -->|"未解决"| N["创建工单并升级"]',
+        '        N --> M',
+        '    end',
+        '',
+        '    I --> O{"用户是否继续提问 ?"}',
+        '    O -->|"继续提问"| D',
+        '    O -->|"结束咨询"| M',
+        '',
+        '    M --> P["会话归档 / 满意度评价 / 质检"]',
+        '    P --> Q(["会话结束"])'
+    ].join('\n');
+
+    // ===== ER 图定义 =====
+    var hgj_erDef = [
+        'erDiagram',
+        '    USER ||--o{ SESSION : "发起"',
+        '    SESSION ||--o{ MESSAGE : "包含"',
+        '    AGENT ||--o{ SESSION : "接待"',
+        '    SESSION ||--o{ TRANSFER : "触发"',
+        '    AGENT ||--o{ TRANSFER : "处理"',
+        '    KNOWLEDGE ||--o{ MESSAGE : "命中"',
+        '',
+        '    USER {',
+        '        string user_id PK "用户唯一标识"',
+        '        string nickname "用户昵称"',
+        '        string channel "来源渠道"',
+        '        string phone "联系方式"',
+        '        datetime created_at "注册时间"',
+        '    }',
+        '',
+        '    SESSION {',
+        '        string session_id PK "会话唯一标识"',
+        '        string user_id FK "所属用户"',
+        '        string agent_id FK "接待客服"',
+        '        string status "会话状态"',
+        '        datetime start_time "开始时间"',
+        '        datetime end_time "结束时间"',
+        '    }',
+        '',
+        '    MESSAGE {',
+        '        string message_id PK "消息唯一标识"',
+        '        string session_id FK "所属会话"',
+        '        string sender_type "发送方类型"',
+        '        text content "消息内容"',
+        '        datetime send_time "发送时间"',
+        '    }',
+        '',
+        '    AGENT {',
+        '        string agent_id PK "客服唯一标识"',
+        '        string name "客服姓名"',
+        '        string group_name "所属技能组"',
+        '        int online_status "在线状态"',
+        '    }',
+        '',
+        '    TRANSFER {',
+        '        string transfer_id PK "转接唯一标识"',
+        '        string session_id FK "所属会话"',
+        '        string agent_id FK "目标客服"',
+        '        string reason "转接原因"',
+        '        datetime transfer_time "转接时间"',
+        '    }',
+        '',
+        '    KNOWLEDGE {',
+        '        string kb_id PK "知识条目标识"',
+        '        string question "标准问题"',
+        '        text answer "标准答案"',
+        '        string category "业务分类"',
+        '    }'
+    ].join('\n');
+
+    // ===== Mermaid 初始化 =====
+    mermaid.initialize({
+        startOnLoad: false,
+        securityLevel: 'loose',
+        theme: 'base',
+        fontFamily: '"Microsoft YaHei","PingFang SC",sans-serif',
+        flowchart: {
+            curve: 'basis',
+            htmlLabels: true,
+            nodeSpacing: 46,
+            rankSpacing: 54,
+            padding: 18,
+            useMaxWidth: false
+        },
+        er: {
+            useMaxWidth: false,
+            layoutDirection: 'TB',
+            minEntityWidth: 120,
+            minEntityHeight: 46,
+            entityPadding: 16
+        },
+        themeVariables: {
+            background: 'transparent',
+            fontFamily: '"Microsoft YaHei","PingFang SC",sans-serif',
+            fontSize: '15px',
+            primaryColor: '#131c2b',
+            primaryTextColor: '#e2e8f0',
+            primaryBorderColor: '#67e8f9',
+            secondaryColor: '#1b2436',
+            secondaryTextColor: '#e2e8f0',
+            secondaryBorderColor: '#a855f7',
+            tertiaryColor: '#0b1220',
+            tertiaryTextColor: '#cbd5e1',
+            tertiaryBorderColor: '#475569',
+            lineColor: '#64748b',
+            textColor: '#e2e8f0',
+            nodeBorder: '#67e8f9',
+            nodeTextColor: '#e2e8f0',
+            clusterBkg: 'rgba(15,23,42,0.72)',
+            clusterBorder: '#334155',
+            edgeLabelBackground: '#0b1220',
+            titleColor: '#f1f5f9',
+            attributeBackgroundColorOdd: '#111b29',
+            attributeBackgroundColorEven: '#0b1220'
+        }
+    });
+
+    // ===== 渲染与缩放 =====
+    var hgj_cards = {};
+
+    function hgj_err(view, msg) {
+        view.innerHTML = '';
+        var box = document.createElement('div');
+        box.className = 'hgj_error';
+        box.textContent = '图表渲染失败：' + msg;
+        view.appendChild(box);
+    }
+
+    /**
+     * 渲染完成后记录原始尺寸，缩放时按 px 设置宽高，避免 transform 造成布局重叠
+     */
+    function hgj_afterRender(key, svg) {
+        var view = document.getElementById('hgj_' + key + '-view');
+        view.innerHTML = svg;
+        var real = view.querySelector('svg');
+        if (!real) return;
+
+        var vb = (real.getAttribute('viewBox') || '').split(/\s+/);
+        var baseW = parseFloat(vb[2]) || real.getBoundingClientRect().width;
+        var baseH = parseFloat(vb[3]) || real.getBoundingClientRect().height;
+
+        hgj_cards[key] = { view: view, svg: real, baseW: baseW, baseH: baseH, scale: 1 };
+        hgj_applyZoom(key);
+
+        var tools = document.querySelector('[data-tools="' + key + '"]');
+        var label = tools.querySelector('.hgj_zoom-val');
+        label.textContent = '100%';
+    }
+
+    function hgj_applyZoom(key) {
+        var c = hgj_cards[key];
+        if (!c) return;
+        c.svg.style.width = (c.baseW * c.scale).toFixed(1) + 'px';
+        c.svg.style.height = (c.baseH * c.scale).toFixed(1) + 'px';
+        var tools = document.querySelector('[data-tools="' + key + '"]');
+        tools.querySelector('.hgj_zoom-val').textContent = Math.round(c.scale * 100) + '%';
+    }
+
+    // 缩放按钮
+    Array.prototype.forEach.call(document.querySelectorAll('.hgj_tools'), function (tools) {
+        var key = tools.getAttribute('data-tools');
+        tools.addEventListener('click', function (e) {
+            var btn = e.target.closest('.hgj_zoom-btn');
+            if (!btn) return;
+            var c = hgj_cards[key];
+            if (!c) return;
+            var act = btn.getAttribute('data-act');
+            if (act === 'plus') c.scale = Math.min(2.4, c.scale + 0.15);
+            else if (act === 'minus') c.scale = Math.max(0.4, c.scale - 0.15);
+            else c.scale = 1;
+            hgj_applyZoom(key);
+        });
+    });
+
+    // 渲染两张图
+    mermaid.render('hgj_flow_id', hgj_flowDef).then(function (res) {
+        hgj_afterRender('flow', res.svg);
+    }).catch(function (err) {
+        hgj_err(document.getElementById('hgj_flow-view'), err && err.message ? err.message : err);
+    });
+
+    mermaid.render('hgj_er_id', hgj_erDef).then(function (res) {
+        hgj_afterRender('er', res.svg);
+    }).catch(function (err) {
+        hgj_err(document.getElementById('hgj_er-view'), err && err.message ? err.message : err);
+    });
+
+    // 窗口尺寸变化时保持缩放比例
+    window.addEventListener('resize', function () {
+        Object.keys(hgj_cards).forEach(hgj_applyZoom);
+    });
+})();
+</script>
+</body>
+</html>

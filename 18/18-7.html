@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-7 Three.js 3D 数据图表</title>
+<!-- 姓名：胡国静，日期：18-7 Three.js 四组 3D 图表（柱状/散点/折线/饼图） -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", sans-serif;
+        background: #05070d;
+        color: #e2e8f0;
+        min-height: 100vh;
+        background-image:
+            radial-gradient(70% 50% at 50% -10%, rgba(34,211,238,0.08) 0%, transparent 70%),
+            radial-gradient(50% 40% at 90% 100%, rgba(168,85,247,0.08) 0%, transparent 70%),
+            linear-gradient(rgba(148,163,184,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148,163,184,0.04) 1px, transparent 1px);
+        background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+    }
+
+    .hgj_back {
+        position: fixed; top: 1.1rem; right: 1.2rem; z-index: 100;
+        padding: 0.5em 1.1em; font-size: 0.76rem; letter-spacing: 0.04em;
+        color: #cbd5e1; text-decoration: none;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(148,163,184,0.24);
+        border-radius: 2em; backdrop-filter: blur(10px);
+        transition: all 0.26s ease;
+    }
+    .hgj_back:hover { color: #67e8f9; border-color: rgba(103,232,249,0.65); transform: translateY(-2px); }
+
+    .hgj_wrap { max-width: 1520px; margin: 0 auto; padding: 3.4rem 1.4rem 3rem; }
+
+    .hgj_head { margin-bottom: 1.5rem; }
+    .hgj_head h1 {
+        font-size: clamp(1.4rem, 3vw, 2.05rem); font-weight: 800; letter-spacing: 0.02em;
+        background: linear-gradient(135deg, #e2f8ff, #67e8f9 45%, #a855f7);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hgj_head p { margin-top: 0.5rem; font-size: 0.8rem; color: #7c8798; letter-spacing: 0.06em; }
+    .hgj_head p b { color: #67e8f9; font-weight: 600; }
+
+    .hgj_grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.15rem;
+    }
+    @media (max-width: 900px) { .hgj_grid { grid-template-columns: 1fr; } }
+
+    .hgj_card {
+        position: relative; overflow: hidden;
+        background: linear-gradient(160deg, rgba(15,23,42,0.88), rgba(6,10,20,0.94));
+        border: 1px solid rgba(148,163,184,0.16);
+        border-radius: 1rem;
+        box-shadow: 0 22px 55px -32px rgba(0,0,0,0.95);
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .hgj_card:hover {
+        border-color: rgba(103,232,249,0.34);
+        box-shadow: 0 22px 55px -30px rgba(0,0,0,0.95), 0 0 34px -18px rgba(103,232,249,0.6);
+    }
+    .hgj_card::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(103,232,249,0.55), transparent);
+    }
+
+    .hgj_card-head {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.8rem;
+        padding: 0.8rem 1rem 0.7rem; flex-wrap: wrap;
+    }
+    .hgj_card-title { font-size: 0.88rem; font-weight: 700; display: flex; align-items: center; gap: 0.55rem; }
+    .hgj_card-title .hgj_no {
+        font-family: "Consolas", monospace; font-size: 0.62rem; letter-spacing: 0.12em;
+        color: #64748b; border: 1px solid rgba(148,163,184,0.2);
+        padding: 0.12em 0.45em; border-radius: 0.3em;
+    }
+    .hgj_card-sub { font-size: 0.68rem; color: #64748b; letter-spacing: 0.04em; margin-top: 0.2rem; }
+    .hgj_hintbar {
+        font-size: 0.62rem; color: #475569; letter-spacing: 0.08em; white-space: nowrap;
+    }
+
+    .hgj_chart-body {
+        position: relative;
+        height: clamp(220px, 28vw, 320px);
+        margin: 0 0.55rem 0.55rem;
+        border-radius: 0.7rem;
+        overflow: hidden;
+        cursor: grab;
+        background: radial-gradient(70% 65% at 50% 30%, rgba(30,58,80,0.22) 0%, rgba(2,6,14,0) 72%);
+        border: 1px solid rgba(148,163,184,0.1);
+    }
+    .hgj_chart-body:active { cursor: grabbing; }
+    .hgj_chart-body canvas { display: block; width: 100% !important; height: 100% !important; }
+
+    .hgj_chart-tip {
+        position: absolute; z-index: 10; display: none;
+        padding: 0.35em 0.7em; border-radius: 0.4em;
+        font-size: 0.7rem; line-height: 1.4em; white-space: nowrap;
+        color: #e2f8ff; background: rgba(8,15,28,0.94);
+        border: 1px solid rgba(103,232,249,0.45);
+        box-shadow: 0 8px 22px -10px rgba(0,0,0,0.9);
+        pointer-events: none; transform: translate(-50%, -135%);
+    }
+    .hgj_chart-tip b { color: #67e8f9; }
+
+    .hgj_legend {
+        display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+        padding: 0 1rem 0.85rem; font-size: 0.66rem; color: #94a3b8;
+    }
+    .hgj_legend i {
+        display: inline-block; width: 8px; height: 8px; border-radius: 2px;
+        margin-right: 0.35rem; vertical-align: middle;
+    }
+
+    .hgj_foot {
+        margin-top: 1.6rem; text-align: center; font-size: 0.68rem;
+        color: #3f4a5a; letter-spacing: 0.16em;
+        font-family: "Consolas", monospace;
+    }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_wrap">
+    <div class="hgj_head">
+        <h1>智能客服数据 · 3D 可视化</h1>
+        <p>基于 <b>Three.js</b> 本地渲染 ｜ 拖动旋转 · 滚轮缩放 · 悬停查看</p>
+    </div>
+
+    <div class="hgj_grid">
+        <!-- 3D 柱状图 -->
+        <section class="hgj_card">
+            <div class="hgj_card-head">
+                <div>
+                    <div class="hgj_card-title">3D 柱状图 <span class="hgj_no">BAR</span></div>
+                    <div class="hgj_card-sub">2026 年各月咨询量（千次）</div>
+                </div>
+                <div class="hgj_hintbar">DRAG · ZOOM · HOVER</div>
+            </div>
+            <div class="hgj_chart-body" id="hgj_body-bar">
+                <div class="hgj_chart-tip" id="hgj_tip-bar"></div>
+            </div>
+            <div class="hgj_legend">
+                <span><i style="background:#22d3ee"></i>低咨询量</span>
+                <span><i style="background:#a855f7"></i>高咨询量</span>
+                <span>柱顶标签为月度量值</span>
+            </div>
+        </section>
+
+        <!-- 3D 散点图 -->
+        <section class="hgj_card">
+            <div class="hgj_card-head">
+                <div>
+                    <div class="hgj_card-title">3D 散点图 <span class="hgj_no">SCATTER</span></div>
+                    <div class="hgj_card-sub">会话样本 · 满意度评分分布</div>
+                </div>
+                <div class="hgj_hintbar">DRAG · ZOOM · HOVER</div>
+            </div>
+            <div class="hgj_chart-body" id="hgj_body-scatter">
+                <div class="hgj_chart-tip" id="hgj_tip-scatter"></div>
+            </div>
+            <div class="hgj_legend">
+                <span><i style="background:#22d3ee"></i>低满意度</span>
+                <span><i style="background:#f472b6"></i>高满意度</span>
+                <span>Y 轴为满意度，共 150 个样本</span>
+            </div>
+        </section>
+
+        <!-- 3D 折线图 -->
+        <section class="hgj_card">
+            <div class="hgj_card-head">
+                <div>
+                    <div class="hgj_card-title">3D 折线图 <span class="hgj_no">LINE</span></div>
+                    <div class="hgj_card-sub">咨询量 / 智能解决量 / 转人工量趋势</div>
+                </div>
+                <div class="hgj_hintbar">DRAG · ZOOM · HOVER</div>
+            </div>
+            <div class="hgj_chart-body" id="hgj_body-line">
+                <div class="hgj_chart-tip" id="hgj_tip-line"></div>
+            </div>
+            <div class="hgj_legend">
+                <span><i style="background:#22d3ee"></i>咨询量</span>
+                <span><i style="background:#a3e635"></i>智能解决量</span>
+                <span><i style="background:#f472b6"></i>转人工量</span>
+            </div>
+        </section>
+
+        <!-- 3D 饼图 -->
+        <section class="hgj_card">
+            <div class="hgj_card-head">
+                <div>
+                    <div class="hgj_card-title">3D 饼图 <span class="hgj_no">PIE</span></div>
+                    <div class="hgj_card-sub">会话处理结果构成占比</div>
+                </div>
+                <div class="hgj_hintbar">DRAG · ZOOM · HOVER</div>
+            </div>
+            <div class="hgj_chart-body" id="hgj_body-pie">
+                <div class="hgj_chart-tip" id="hgj_tip-pie"></div>
+            </div>
+            <div class="hgj_legend">
+                <span><i style="background:#22d3ee"></i>智能应答</span>
+                <span><i style="background:#a3e635"></i>人工解决</span>
+                <span><i style="background:#fbbf24"></i>工单升级</span>
+                <span><i style="background:#f472b6"></i>用户放弃</span>
+                <span><i style="background:#a855f7"></i>超时关闭</span>
+                <span><i style="background:#64748b"></i>其他</span>
+            </div>
+        </section>
+    </div>
+
+    <div class="hgj_foot">THREE.JS r147 · LOCAL CDN · NO ONLINE RESOURCE</div>
+</div>
+
+<script src="cdn/three.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var hgj_charts = [];
+    var hgj_raycaster = null;
+
+    // ===== 通用工具：3D 文字标签（Canvas 贴图 Sprite）=====
+    function hgj_makeLabel(text, color, size) {
+        var cv = document.createElement('canvas');
+        cv.width = 256; cv.height = 64;
+        var g = cv.getContext('2d');
+        g.clearRect(0, 0, 256, 64);
+        g.font = 'bold 32px "Microsoft YaHei","PingFang SC",sans-serif';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillStyle = color || '#cbd5e1';
+        g.fillText(text, 128, 33);
+
+        var tex = new THREE.CanvasTexture(cv);
+        tex.minFilter = THREE.LinearFilter;
+        tex.encoding = THREE.sRGBEncoding;
+
+        var mat = new THREE.SpriteMaterial({
+            map: tex,
+            transparent: true,
+            depthWrite: false,
+            depthTest: false
+        });
+        var sp = new THREE.Sprite(mat);
+        var s = size || 1;
+        sp.scale.set(s, s * 0.25, 1);
+        sp.renderOrder = 999;
+        return sp;
+    }
+
+    // ===== 通用工具：创建图表外壳（场景/相机/渲染器/轨道控制）=====
+    function hgj_shell(key, opt) {
+        var body = document.getElementById('hgj_body-' + key);
+        var tip = document.getElementById('hgj_tip-' + key);
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(42, 1, 0.1, 400);
+        var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(body.clientWidth, body.clientHeight, false);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.12;
+        body.appendChild(renderer.domElement);
+
+        // 灯光
+        scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+        var key1 = new THREE.DirectionalLight(0xffffff, 0.9);
+        key1.position.set(7, 13, 9);
+        scene.add(key1);
+        var fill = new THREE.DirectionalLight(0x4cc9f0, 0.4);
+        fill.position.set(-9, 4, -7);
+        scene.add(fill);
+        var rim = new THREE.DirectionalLight(0xa855f7, 0.28);
+        rim.position.set(0, -6, 8);
+        scene.add(rim);
+
+        var orbit = {
+            theta: opt.theta,
+            phi: opt.phi,
+            radius: opt.radius,
+            minR: opt.minR,
+            maxR: opt.maxR,
+            auto: opt.auto || 0,
+            targetY: opt.targetY || 0,
+            minPhi: opt.minPhi || 0.22,
+            maxPhi: opt.maxPhi || 1.5
+        };
+
+        var chart = {
+            key: key,
+            body: body,
+            tip: tip,
+            scene: scene,
+            camera: camera,
+            renderer: renderer,
+            orbit: orbit,
+            group: new THREE.Group(),
+            pickables: [],
+            hovered: null,
+            applyHover: null,
+            clearHover: null,
+            update: null,
+            pointer: new THREE.Vector2(-2, -2),
+            raycaster: new THREE.Raycaster()
+        };
+        scene.add(chart.group);
+        hgj_charts.push(chart);
+
+        // 拖拽旋转
+        var dragging = false, lastX = 0, lastY = 0;
+        var dom = renderer.domElement;
+
+        dom.addEventListener('pointerdown', function (e) {
+            dragging = true;
+            lastX = e.clientX; lastY = e.clientY;
+            try { dom.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+        dom.addEventListener('pointerup', function (e) {
+            dragging = false;
+            try { dom.releasePointerCapture(e.pointerId); } catch (err) {}
+        });
+        dom.addEventListener('pointerleave', function () {
+            dragging = false;
+            hgj_clearTip(chart);
+        });
+
+        dom.addEventListener('pointermove', function (e) {
+            if (dragging) {
+                var dx = e.clientX - lastX;
+                var dy = e.clientY - lastY;
+                lastX = e.clientX; lastY = e.clientY;
+                orbit.theta -= dx * 0.0068;
+                orbit.phi = Math.max(orbit.minPhi, Math.min(orbit.maxPhi, orbit.phi - dy * 0.006));
+            }
+            hgj_hover(chart, e);
+        });
+
+        // 滚轮缩放（不滚动页面）
+        dom.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            var k = e.deltaY > 0 ? 1.1 : 0.9;
+            orbit.radius = Math.max(orbit.minR, Math.min(orbit.maxR, orbit.radius * k));
+        }, { passive: false });
+
+        return chart;
+    }
+
+    function hgj_clearTip(chart) {
+        chart.tip.style.display = 'none';
+        if (chart.hovered && chart.clearHover) chart.clearHover();
+        chart.hovered = null;
+    }
+
+    function hgj_hover(chart, e) {
+        var rect = chart.renderer.domElement.getBoundingClientRect();
+        chart.pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        chart.pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        chart.raycaster.setFromCamera(chart.pointer, chart.camera);
+        var hits = chart.raycaster.intersectObjects(chart.pickables, false);
+
+        if (!hits.length) {
+            hgj_clearTip(chart);
+            return;
+        }
+
+        var obj = hits[0].object;
+        if (chart.hovered !== obj) {
+            if (chart.hovered && chart.clearHover) chart.clearHover();
+            chart.hovered = obj;
+            if (chart.applyHover) chart.applyHover(obj);
+        }
+
+        chart.tip.style.display = 'block';
+        chart.tip.style.left = (e.clientX - rect.left) + 'px';
+        chart.tip.style.top = (e.clientY - rect.top) + 'px';
+        chart.tip.innerHTML = obj.userData.hgjTip || '';
+    }
+
+    // ===== 相机更新 =====
+    function hgj_updateCamera(chart) {
+        var o = chart.orbit;
+        var sp = Math.sin(o.phi), cp = Math.cos(o.phi);
+        chart.camera.position.set(
+            o.radius * sp * Math.sin(o.theta),
+            o.radius * cp,
+            o.radius * sp * Math.cos(o.theta)
+        );
+        chart.camera.lookAt(0, o.targetY, 0);
+    }
+
+    // ===== 地面网格 =====
+    function hgj_addGrid(chart, size, div) {
+        var grid = new THREE.GridHelper(size, div, 0x1f3b52, 0x11202f);
+        grid.material.transparent = true;
+        grid.material.opacity = 0.7;
+        chart.group.add(grid);
+        return grid;
+    }
+
+    // ============================================================
+    // 图表一：3D 柱状图
+    // ============================================================
+    function hgj_buildBar() {
+        var months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+        var values = [42, 55, 61, 48, 72, 88, 95, 120, 138, 126, 150, 166];
+        var max = Math.max.apply(null, values);
+
+        var c = hgj_shell('bar', {
+            theta: 0.62, phi: 1.02, radius: 20, minR: 11, maxR: 34, targetY: 2.6, auto: 0.0016
+        });
+        hgj_addGrid(c, 16, 16);
+
+        var bars = [];
+        for (var i = 0; i < values.length; i++) {
+            var h = 0.6 + (values[i] / max) * 5.2;
+            var color = new THREE.Color().setHSL(0.52 - (i / values.length) * 0.24, 0.72, 0.56);
+
+            var geo = new THREE.BoxGeometry(0.62, 1, 0.62);
+            geo.translate(0, 0.5, 0);   // 原点移到底部，便于纵向生长动画
+
+            var mat = new THREE.MeshStandardMaterial({
+                color: color,
+                metalness: 0.42,
+                roughness: 0.34,
+                emissive: color.clone().multiplyScalar(0.22),
+                emissiveIntensity: 0.6
+            });
+
+            var mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set((i - (values.length - 1) / 2) * 0.95, 0, 0);
+            mesh.scale.y = 0.001;
+            mesh.userData = {
+                value: values[i],
+                month: months[i],
+                targetH: h,
+                hgjTip: '<b>' + months[i] + '</b> 咨询量 ' + values[i] + ' 千次'
+            };
+            c.group.add(mesh);
+            bars.push(mesh);
+
+            // 柱顶数值标签
+            var label = hgj_makeLabel(values[i] + 'k', '#a5f3fc', 1.15);
+            label.position.set(mesh.position.x, 0.2, 0);
+            label.userData.isLabel = true;
+            c.group.add(label);
+            mesh.userData.label = label;
+
+            // 月份轴标签
+            var ml = hgj_makeLabel(months[i], '#64748b', 0.95);
+            ml.position.set(mesh.position.x, 0.05, 1.45);
+            c.group.add(ml);
+        }
+
+        c.pickables = bars;
+        c.applyHover = function (obj) {
+            obj.material.emissiveIntensity = 1.5;
+            obj.scale.x = 1.08; obj.scale.z = 1.08;
+        };
+        c.clearHover = function () {
+            if (!c.hovered) return;
+            c.hovered.material.emissiveIntensity = 0.6;
+            c.hovered.scale.x = 1; c.hovered.scale.z = 1;
+        };
+
+        // 生长动画
+        c.update = function (t) {
+            for (var k = 0; k < bars.length; k++) {
+                var b = bars[k];
+                var p = Math.min(1, Math.max(0, (t - k * 0.075) / 1.5));
+                var e = 1 - Math.pow(1 - p, 3);
+                b.scale.y = 0.001 + b.userData.targetH * e;
+                var top = b.userData.targetH * e;
+                b.userData.label.position.y = top + 0.42;
+            }
+        };
+        return c;
+    }
+
+    // ============================================================
+    // 图表二：3D 散点图
+    // ============================================================
+    function hgj_buildScatter() {
+        var c = hgj_shell('scatter', {
+            theta: 0.9, phi: 0.95, radius: 18, minR: 10, maxR: 30, targetY: 3.1, auto: 0.0022
+        });
+        hgj_addGrid(c, 14, 14);
+
+        // 半透明包围盒，体现三维数据空间
+        var boxGeo = new THREE.BoxGeometry(9.6, 6.6, 6.6);
+        var box = new THREE.Mesh(boxGeo, new THREE.MeshBasicMaterial({
+            color: 0x2a4a63, wireframe: true, transparent: true, opacity: 0.28
+        }));
+        box.position.y = 3.3;
+        c.group.add(box);
+
+        var geo = new THREE.SphereGeometry(0.19, 9, 7);
+        var pts = [];
+        for (var i = 0; i < 150; i++) {
+            var x = (Math.random() - 0.5) * 8.6;
+            var y = 0.5 + Math.random() * 6.0;
+            var z = (Math.random() - 0.5) * 5.8;
+            var score = 1 + (y / 6.5) * 4;
+            var col = new THREE.Color().setHSL(0.52 - (y / 6.5) * 0.28, 0.78, 0.56);
+
+            var mat = new THREE.MeshStandardMaterial({
+                color: col, metalness: 0.3, roughness: 0.4,
+                emissive: col.clone().multiplyScalar(0.3), emissiveIntensity: 0.7
+            });
+            var p = new THREE.Mesh(geo, mat);
+            p.position.set(x, y, z);
+            p.userData = {
+                hgjTip: '<b>样本 #' + (i + 1) + '</b> 满意度 ' + score.toFixed(1) + ' 分'
+            };
+            c.group.add(p);
+            pts.push(p);
+        }
+
+        c.pickables = pts;
+        c.applyHover = function (obj) { obj.scale.setScalar(1.9); obj.material.emissiveIntensity = 1.6; };
+        c.clearHover = function () {
+            if (!c.hovered) return;
+            c.hovered.scale.setScalar(1);
+            c.hovered.material.emissiveIntensity = 0.7;
+        };
+        return c;
+    }
+
+    // ============================================================
+    // 图表三：3D 折线图（管道 + 节点 + 流动光点）
+    // ============================================================
+    function hgj_buildLine() {
+        var c = hgj_shell('line', {
+            theta: 0.5, phi: 0.9, radius: 20, minR: 11, maxR: 32, targetY: 2.6, auto: 0.0014
+        });
+        hgj_addGrid(c, 16, 16);
+
+        var series = [
+            { name: '咨询量', color: 0x22d3ee, z: -1.35, data: [2.0, 2.4, 2.9, 3.1, 3.8, 4.2, 4.6, 5.0, 5.3] },
+            { name: '智能解决量', color: 0xa3e635, z: 0, data: [1.4, 1.7, 2.1, 2.5, 2.9, 3.3, 3.7, 4.1, 4.5] },
+            { name: '转人工量', color: 0xf472b6, z: 1.35, data: [0.9, 1.0, 1.1, 1.0, 0.9, 0.85, 0.8, 0.75, 0.7] }
+        ];
+
+        var nodes = [];
+        var flows = [];
+        var xStart = -6;
+
+        for (var s = 0; s < series.length; s++) {
+            var se = series[s];
+            var p3 = [];
+            for (var i = 0; i < se.data.length; i++) {
+                p3.push(new THREE.Vector3(xStart + i * 1.5, se.data[i], se.z));
+            }
+
+            var curve = new THREE.CatmullRomCurve3(p3);
+            var geo = new THREE.TubeGeometry(curve, 130, 0.075, 8, false);
+            var mat = new THREE.MeshStandardMaterial({
+                color: se.color, metalness: 0.35, roughness: 0.35,
+                emissive: new THREE.Color(se.color).multiplyScalar(0.35), emissiveIntensity: 0.9
+            });
+            c.group.add(new THREE.Mesh(geo, mat));
+
+            // 数据节点
+            for (var j = 0; j < p3.length; j++) {
+                var nm = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.15, 12, 10),
+                    new THREE.MeshStandardMaterial({
+                        color: se.color, metalness: 0.4, roughness: 0.3,
+                        emissive: new THREE.Color(se.color), emissiveIntensity: 0.55
+                    })
+                );
+                nm.position.copy(p3[j]);
+                nm.userData = {
+                    hgjTip: '<b>' + se.name + '</b> 第 ' + (j + 1) + ' 周 · ' + se.data[j].toFixed(1) + ' 千次'
+                };
+                c.group.add(nm);
+                nodes.push(nm);
+            }
+
+            // 沿曲线流动的光点
+            for (var f = 0; f < 2; f++) {
+                var dot = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.1, 8, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+                );
+                dot.userData.curve = curve;
+                dot.userData.offset = f * 0.5;
+                c.group.add(dot);
+                flows.push(dot);
+            }
+        }
+
+        c.pickables = nodes;
+        c.applyHover = function (obj) { obj.scale.setScalar(1.85); obj.material.emissiveIntensity = 1.6; };
+        c.clearHover = function () {
+            if (!c.hovered) return;
+            c.hovered.scale.setScalar(1);
+            c.hovered.material.emissiveIntensity = 0.55;
+        };
+
+        c.update = function (t) {
+            for (var k = 0; k < flows.length; k++) {
+                var d = flows[k];
+                var u = (t * 0.16 + d.userData.offset) % 1;
+                var pt = d.userData.curve.getPoint(u);
+                d.position.copy(pt);
+            }
+        };
+        return c;
+    }
+
+    // ============================================================
+    // 图表四：3D 饼图（挤出扇形 + 悬停抽离）
+    // ============================================================
+    function hgj_buildPie() {
+        var c = hgj_shell('pie', {
+            theta: 0.78, phi: 0.52, radius: 13, minR: 7.5, maxR: 24, targetY: 0.35, auto: 0.0028,
+            minPhi: 0.18, maxPhi: 1.25
+        });
+
+        var slices = [
+            { name: '智能应答', value: 52, color: 0x22d3ee },
+            { name: '人工解决', value: 18, color: 0xa3e635 },
+            { name: '工单升级', value: 11, color: 0xfbbf24 },
+            { name: '用户放弃', value: 9, color: 0xf472b6 },
+            { name: '超时关闭', value: 6, color: 0xa855f7 },
+            { name: '其他', value: 4, color: 0x64748b }
+        ];
+
+        var total = 0;
+        slices.forEach(function (s) { total += s.value; });
+
+        var R = 3.5;
+        var start = 0;
+        var meshes = [];
+
+        for (var i = 0; i < slices.length; i++) {
+            var sl = slices[i];
+            var len = (sl.value / total) * Math.PI * 2;
+
+            // 二维扇形 → 挤出成 3D 扇块
+            var shape = new THREE.Shape();
+            shape.moveTo(0, 0);
+            shape.absarc(0, 0, R, start, start + len, false);
+            shape.lineTo(0, 0);
+
+            var geo = new THREE.ExtrudeGeometry(shape, {
+                depth: 0.55,
+                bevelEnabled: false,
+                curveSegments: 34
+            });
+            geo.rotateX(-Math.PI / 2);   // 平铺到 XZ 平面，厚度朝上
+
+            var mat = new THREE.MeshStandardMaterial({
+                color: sl.color, metalness: 0.45, roughness: 0.3,
+                emissive: new THREE.Color(sl.color).multiplyScalar(0.28),
+                emissiveIntensity: 0.75
+            });
+
+            var m = new THREE.Mesh(geo, mat);
+            m.userData = {
+                value: sl.value,
+                dir: new THREE.Vector3(Math.cos(start + len / 2), 0, -Math.sin(start + len / 2)),
+                offset: 0,
+                hgjTip: '<b>' + sl.name + '</b> 占比 ' + sl.value + '%'
+            };
+            c.group.add(m);
+            meshes.push(m);
+
+            // 百分比标签
+            var lb = hgj_makeLabel(sl.value + '%', '#e2f8ff', 1.15);
+            var mid = start + len / 2;
+            lb.position.set(Math.cos(mid) * (R + 0.55), 0.95, -Math.sin(mid) * (R + 0.55));
+            c.group.add(lb);
+
+            start += len;
+        }
+
+        c.pickables = meshes;
+        c.applyHover = function (obj) {
+            obj.material.emissiveIntensity = 1.5;
+            obj.userData.hovered = true;
+        };
+        c.clearHover = function () {
+            if (!c.hovered) return;
+            c.hovered.userData.hovered = false;
+            c.hovered.material.emissiveIntensity = 0.75;
+        };
+
+        // 悬停扇块向外抽离，松开回位
+        c.update = function (t) {
+            for (var k = 0; k < meshes.length; k++) {
+                var m = meshes[k];
+                var target = m.userData.hovered ? 0.34 : 0;
+                m.userData.offset += (target - m.userData.offset) * 0.16;
+                m.position.copy(m.userData.dir).multiplyScalar(m.userData.offset);
+            }
+        };
+        return c;
+    }
+
+    // ===== 初始化四张图 =====
+    hgj_buildBar();
+    hgj_buildScatter();
+    hgj_buildLine();
+    hgj_buildPie();
+
+    // ===== 尺寸自适应 =====
+    function hgj_resize() {
+        for (var i = 0; i < hgj_charts.length; i++) {
+            var c = hgj_charts[i];
+            var w = c.body.clientWidth, h = c.body.clientHeight;
+            if (w === 0 || h === 0) continue;
+            c.renderer.setSize(w, h, false);
+            c.camera.aspect = w / h;
+            c.camera.updateProjectionMatrix();
+        }
+    }
+    var hgj_resizeTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(hgj_resizeTimer);
+        hgj_resizeTimer = setTimeout(hgj_resize, 120);
+    });
+    hgj_resize();
+
+    // ===== 统一渲染循环 =====
+    var hgj_start = performance.now();
+    function hgj_tick(ts) {
+        var t = (ts - hgj_start) / 1000;
+
+        for (var i = 0; i < hgj_charts.length; i++) {
+            var c = hgj_charts[i];
+            c.orbit.theta += c.orbit.auto;
+            hgj_updateCamera(c);
+            if (c.update) c.update(t);
+            c.renderer.render(c.scene, c.camera);
+        }
+        requestAnimationFrame(hgj_tick);
+    }
+    requestAnimationFrame(hgj_tick);
+})();
+</script>
+</body>
+</html>
