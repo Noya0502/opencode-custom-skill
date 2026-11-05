@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-2 Canvas 电商全站系统架构图</title>
+<!-- 姓名：胡国静，日期：18-2 Canvas电商架构图 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        min-height: 100vh; padding: 1.6rem 1rem 2rem;
+        background: radial-gradient(circle at 15% 0%, #1e293b 0%, transparent 55%),
+                    radial-gradient(circle at 90% 100%, #1e1b4b 0%, transparent 60%),
+                    #080d18;
+        color: #e2e8f0; display: flex; flex-direction: column;
+        align-items: center; gap: 1.1rem; overflow-x: hidden;
+    }
+    .hgj_back {
+        position: fixed; top: 1.2rem; right: 1.4rem;
+        padding: 0.55em 1.2em; font-size: 0.84rem;
+        color: #cbd5e1; text-decoration: none;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 2em; backdrop-filter: blur(8px);
+        transition: all 0.3s ease; z-index: 30;
+    }
+    .hgj_back:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: translateY(-2px); }
+
+    .hgj_head { text-align: center; animation: hgj_fade-down 0.9s cubic-bezier(.22,1,.36,1) both; }
+    .hgj_head h1 {
+        font-size: clamp(1.15rem, 2.8vw, 1.6rem); font-weight: 800; letter-spacing: 0.06em;
+        background: linear-gradient(135deg, #818cf8, #22d3ee 45%, #f472b6);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hgj_head p { font-size: 0.76rem; color: #64748b; margin-top: 0.45rem; letter-spacing: 0.05em; }
+    @keyframes hgj_fade-down {
+        from { opacity: 0; transform: translateY(-16px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 3D 入场：perspective + rotateX */
+    .hgj_stage { perspective: 1600px; width: min(96vw, 1240px); }
+    .hgj_board {
+        position: relative; width: 100%; height: min(70vh, 660px); min-height: 380px;
+        border-radius: 1.2rem; overflow: hidden;
+        background: linear-gradient(160deg, #0b1220 0%, #0f172a 60%, #0b1220 100%);
+        border: 1px solid rgba(148,163,184,0.16);
+        box-shadow: 0 40px 80px -30px rgba(0,0,0,0.9), 0 0 0 1px rgba(99,102,241,0.08) inset;
+        transform-style: preserve-3d;
+        animation: hgj_board-in 1s cubic-bezier(.22,1,.36,1) both;
+        transition: transform 0.35s ease, box-shadow 0.35s ease;
+    }
+    .hgj_board:hover {
+        transform: translateZ(18px) rotateX(0.8deg);
+        box-shadow: 0 46px 90px -30px rgba(0,0,0,0.95), 0 0 40px -10px rgba(99,102,241,0.35);
+    }
+    @keyframes hgj_board-in {
+        from { opacity: 0; transform: rotateX(14deg) translateY(30px); }
+        to { opacity: 1; transform: rotateX(0) translateY(0); }
+    }
+    canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+    canvas.hgj_grabbing { cursor: grabbing; }
+
+    /* 悬浮说明卡 */
+    .hgj_tip {
+        position: absolute; left: 0; top: 0;
+        max-width: 260px; padding: 0.7rem 0.9rem;
+        background: rgba(15,23,42,0.96);
+        border: 1px solid rgba(99,102,241,0.45);
+        border-left: 3px solid #818cf8;
+        border-radius: 0.6rem;
+        box-shadow: 0 14px 34px -12px rgba(0,0,0,0.9), 0 0 22px -8px rgba(99,102,241,0.6);
+        pointer-events: none; opacity: 0; transform: translateY(6px) scale(0.97);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+        z-index: 10; backdrop-filter: blur(6px);
+    }
+    .hgj_tip.hgj_show { opacity: 1; transform: translateY(0) scale(1); }
+    .hgj_tip h4 { font-size: 0.86rem; color: #e2e8f0; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.4rem; }
+    .hgj_tip h4 i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .hgj_tip .hgj_tip-layer { font-size: 0.68rem; color: #64748b; letter-spacing: 0.08em; margin-bottom: 0.35rem; text-transform: uppercase; }
+    .hgj_tip p { font-size: 0.74rem; line-height: 1.65; color: #94a3b8; }
+
+    .hgj_toolbar { display: flex; gap: 0.55rem; flex-wrap: wrap; justify-content: center; animation: hgj_fade-down 1s 0.15s cubic-bezier(.22,1,.36,1) both; }
+    .hgj_btn {
+        padding: 0.48em 1em; font-size: 0.78rem; font-weight: 700; font-family: inherit;
+        color: #cbd5e1; background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 0.55em;
+        cursor: pointer; transition: all 0.22s ease;
+    }
+    .hgj_btn:hover { background: rgba(99,102,241,0.22); border-color: rgba(129,140,248,0.6); color: #fff; transform: translateY(-1px); }
+    .hgj_btn.hgj_primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); border-color: transparent; color: #fff; box-shadow: 0 6px 16px -6px rgba(99,102,241,0.8); }
+    .hgj_btn.hgj_primary:hover { filter: brightness(1.1); }
+
+    .hgj_hint { font-size: 0.72rem; color: #475569; letter-spacing: 0.04em; text-align: center; }
+    .hgj_hint b { color: #818cf8; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_head">
+    <h1>电商全站系统架构图</h1>
+    <p>五层架构 · 拖拽平移 · 滚轮缩放 · 悬浮节点查看说明</p>
+</div>
+
+<div class="hgj_stage">
+    <div class="hgj_board" id="hgj_board">
+        <canvas id="hgj_canvas"></canvas>
+        <div class="hgj_tip" id="hgj_tip">
+            <div class="hgj_tip-layer" id="hgj_tipLayer">LAYER</div>
+            <h4><i id="hgj_tipDot"></i><span id="hgj_tipName">节点</span></h4>
+            <p id="hgj_tipDesc">说明</p>
+        </div>
+    </div>
+</div>
+
+<div class="hgj_toolbar">
+    <button class="hgj_btn" id="hgj_zoomIn">＋ 放大</button>
+    <button class="hgj_btn" id="hgj_zoomOut">－ 缩小</button>
+    <button class="hgj_btn" id="hgj_reset">⟲ 重置视图</button>
+    <button class="hgj_btn hgj_primary" id="hgj_center">◎ 居中</button>
+</div>
+
+<p class="hgj_hint">提示：<b>拖拽画布</b> 平移，<b>滚轮</b> 以鼠标位置为中心缩放，<b>悬浮节点</b> 高亮并弹出说明</p>
+
+<script>
+(function () {
+    var hgj_canvas = document.getElementById('hgj_canvas');
+    var hgj_board = document.getElementById('hgj_board');
+    var hgj_ctx = hgj_canvas.getContext('2d');
+    var hgj_tip = document.getElementById('hgj_tip');
+    var hgj_tipLayer = document.getElementById('hgj_tipLayer');
+    var hgj_tipName = document.getElementById('hgj_tipName');
+    var hgj_tipDesc = document.getElementById('hgj_tipDesc');
+    var hgj_tipDot = document.getElementById('hgj_tipDot');
+
+    var hgj_dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var hgj_w = 0, hgj_h = 0;
+    var hgj_scale = 1, hgj_offX = 0, hgj_offY = 0;
+    var hgj_time = 0;
+    var hgj_hoverNode = null;
+    var hgj_isDragging = false;
+    var hgj_lastPt = { x: 0, y: 0 };
+    var hgj_mouseScreen = { x: 0, y: 0 };
+
+    // ===== 世界尺寸 =====
+    var HGD_WORLD_W = 1180;
+    var HGD_WORLD_H = 860;
+
+    var hgj_layerMeta = {
+        user:   { name: '用户层',     color: '#818cf8' },
+        gate:   { name: '网关层',     color: '#22d3ee' },
+        biz:    { name: '业务服务层', color: '#f472b6' },
+        cache:  { name: '缓存层',     color: '#fbbf24' },
+        db:     { name: '数据库层',   color: '#34d399' }
+    };
+
+    var hgj_rows = [
+        { key: 'user',  y: 90,  nodes: [
+            { name: 'Web 前端',  desc: '面向 PC 用户的商城前台，负责商品浏览、下单与支付入口。' },
+            { name: '移动 APP',  desc: 'iOS / Android 客户端，承接推送、秒杀与会员权益。' },
+            { name: '微信小程序', desc: '轻量级社交电商入口，支持分享裂变与快捷支付。' }
+        ]},
+        { key: 'gate', y: 245, nodes: [
+            { name: 'API 网关',   desc: '统一入口，负责路由转发、限流熔断与协议转换。' },
+            { name: '负载均衡',   desc: 'Nginx / LVS 四层七层负载，按权重分发流量到后端集群。' },
+            { name: '统一鉴权',   desc: 'JWT + OAuth2 鉴权，校验用户身份与接口权限。' }
+        ]},
+        { key: 'biz', y: 400, nodes: [
+            { name: '用户服务', desc: '注册登录、会员等级、地址簿与积分体系。' },
+            { name: '商品服务', desc: '商品 SPU/SKU 管理、类目、库存与价格策略。' },
+            { name: '订单服务', desc: '下单、拆单、状态机流转与售后工单。' },
+            { name: '支付服务', desc: '对接微信 / 支付宝，处理支付回调与对账。' }
+        ]},
+        { key: 'cache', y: 555, nodes: [
+            { name: 'Redis 集群', desc: '热点商品、购物车与会话缓存，QPS 高并发支撑。' },
+            { name: '本地缓存',   desc: 'Guava / Caffeine 进程内缓存，降低远程调用开销。' },
+            { name: 'CDN 静态资源', desc: '图片、视频与前端包分发，边缘节点就近加速。' }
+        ]},
+        { key: 'db', y: 710, nodes: [
+            { name: 'MySQL 主从', desc: '核心交易数据存储，主库写入、从库读扩展。' },
+            { name: '对象存储',   desc: 'OSS / S3 存放商品图片与用户上传附件。' },
+            { name: '消息队列',   desc: 'Kafka / RocketMQ 异步解耦订单、库存与通知。' }
+        ]}
+    ];
+
+    // ===== 节点坐标计算 =====
+    var hgj_nodes = [];
+    var hgj_edges = [];
+    var NODE_W = 250, NODE_H = 66, NODE_GAP = 45;
+
+    (function hgj_buildNodes() {
+        var rowStart = 0, i, r, n, total, startX;
+        for (r = 0; r < hgj_rows.length; r++) {
+            var row = hgj_rows[r];
+            n = row.nodes.length;
+            total = n * NODE_W + (n - 1) * NODE_GAP;
+            startX = (HGD_WORLD_W - total) / 2;
+            for (i = 0; i < n; i++) {
+                hgj_nodes.push({
+                    id: row.key + '-' + i,
+                    name: row.nodes[i].name,
+                    desc: row.nodes[i].desc,
+                    layer: row.key,
+                    color: hgj_layerMeta[row.key].color,
+                    x: startX + i * (NODE_W + NODE_GAP),
+                    y: row.y,
+                    w: NODE_W,
+                    h: NODE_H,
+                    cx: startX + i * (NODE_W + NODE_GAP) + NODE_W / 2
+                });
+            }
+        }
+        // 相邻层全连接
+        for (r = 0; r < hgj_rows.length - 1; r++) {
+            var upper = hgj_nodes.filter(function (n2) { return n2.layer === hgj_rows[r].key; });
+            var lower = hgj_nodes.filter(function (n2) { return n2.layer === hgj_rows[r + 1].key; });
+            upper.forEach(function (u) {
+                lower.forEach(function (l) {
+                    hgj_edges.push({ from: u.id, to: l.id, color: hgj_layerMeta[hgj_rows[r + 1].key].color });
+                });
+            });
+        }
+        rowStart = 0;
+    })();
+
+    function hgj_getNode(id) {
+        for (var i = 0; i < hgj_nodes.length; i++) if (hgj_nodes[i].id === id) return hgj_nodes[i];
+        return null;
+    }
+
+    // ===== 尺寸 =====
+    function hgj_resize() {
+        var rect = hgj_board.getBoundingClientRect();
+        hgj_w = rect.width;
+        hgj_h = rect.height;
+        hgj_canvas.width = Math.round(hgj_w * hgj_dpr);
+        hgj_canvas.height = Math.round(hgj_h * hgj_dpr);
+        hgj_ctx.setTransform(hgj_dpr, 0, 0, hgj_dpr, 0, 0);
+    }
+
+    function hgj_fitView() {
+        var s = Math.min(hgj_w / HGD_WORLD_W, hgj_h / HGD_WORLD_H) * 0.94;
+        hgj_scale = s;
+        hgj_offX = (hgj_w - HGD_WORLD_W * s) / 2;
+        hgj_offY = (hgj_h - HGD_WORLD_H * s) / 2;
+    }
+
+    function hgj_screenToWorld(sx, sy) {
+        return { x: (sx - hgj_offX) / hgj_scale, y: (sy - hgj_offY) / hgj_scale };
+    }
+
+    // ===== 圆角矩形 =====
+    function hgj_roundRect(c, x, y, w, h, r) {
+        c.beginPath();
+        c.moveTo(x + r, y);
+        c.lineTo(x + w - r, y);
+        c.quadraticCurveTo(x + w, y, x + w, y + r);
+        c.lineTo(x + w, y + h - r);
+        c.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        c.lineTo(x + r, y + h);
+        c.quadraticCurveTo(x, y + h, x, y + h - r);
+        c.lineTo(x, y + r);
+        c.quadraticCurveTo(x, y, x + r, y);
+        c.closePath();
+    }
+
+    function hgj_hexToRgba(hex, a) {
+        var h = hex.replace('#', '');
+        if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+        var num = parseInt(h, 16);
+        return 'rgba(' + ((num >> 16) & 255) + ',' + ((num >> 8) & 255) + ',' + (num & 255) + ',' + a + ')';
+    }
+
+    // ===== 绘制 =====
+    function hgj_drawBackground() {
+        var g = hgj_ctx.createLinearGradient(0, 0, hgj_w, hgj_h);
+        g.addColorStop(0, '#0b1220');
+        g.addColorStop(0.5, '#0f172a');
+        g.addColorStop(1, '#0b1220');
+        hgj_ctx.fillStyle = g;
+        hgj_ctx.fillRect(0, 0, hgj_w, hgj_h);
+
+        // 网格
+        var step = 40 * hgj_scale;
+        if (step > 8) {
+            var startX = hgj_offX % step;
+            var startY = hgj_offY % step;
+            hgj_ctx.strokeStyle = 'rgba(148,163,184,0.055)';
+            hgj_ctx.lineWidth = 1;
+            for (var x = startX; x < hgj_w; x += step) {
+                hgj_ctx.beginPath(); hgj_ctx.moveTo(x, 0); hgj_ctx.lineTo(x, hgj_h); hgj_ctx.stroke();
+            }
+            for (var y = startY; y < hgj_h; y += step) {
+                hgj_ctx.beginPath(); hgj_ctx.moveTo(0, y); hgj_ctx.lineTo(hgj_w, y); hgj_ctx.stroke();
+            }
+        }
+    }
+
+    function hgj_drawLayerBands() {
+        var i, row, y0, bandH = 116;
+        for (i = 0; i < hgj_rows.length; i++) {
+            row = hgj_rows[i];
+            var color = hgj_layerMeta[row.key].color;
+            y0 = row.y - 34;
+            var bx = hgj_offX + 12 * hgj_scale;
+            var bw = HGD_WORLD_W * hgj_scale - 24 * hgj_scale;
+            var by = hgj_offY + y0 * hgj_scale;
+            var bh = bandH * hgj_scale;
+
+            hgj_ctx.save();
+            hgj_roundRect(hgj_ctx, bx, by, bw, bh, 14 * hgj_scale);
+            hgj_ctx.fillStyle = hgj_hexToRgba(color, 0.045);
+            hgj_ctx.fill();
+            hgj_ctx.strokeStyle = hgj_hexToRgba(color, 0.18);
+            hgj_ctx.lineWidth = 1;
+            hgj_ctx.stroke();
+
+            // 层标签
+            var fontSize = Math.max(9, 11 * hgj_scale);
+            hgj_ctx.font = '700 ' + fontSize + 'px "Microsoft YaHei", sans-serif';
+            hgj_ctx.fillStyle = hgj_hexToRgba(color, 0.95);
+            hgj_ctx.textAlign = 'left';
+            hgj_ctx.textBaseline = 'middle';
+            hgj_ctx.fillText('◤ ' + hgj_layerMeta[row.key].name, bx + 12 * hgj_scale, by + fontSize * 0.95);
+            hgj_ctx.restore();
+        }
+    }
+
+    function hgj_drawEdges() {
+        var i, e, from, to, sx, sy, ex, ey;
+        var activeFrom = hgj_hoverNode ? hgj_hoverNode.id : null;
+
+        for (i = 0; i < hgj_edges.length; i++) {
+            e = hgj_edges[i];
+            from = hgj_getNode(e.from);
+            to = hgj_getNode(e.to);
+            if (!from || !to) continue;
+
+            sx = hgj_offX + from.x * hgj_scale + NODE_W * hgj_scale / 2;
+            sy = hgj_offY + (from.y + NODE_H) * hgj_scale;
+            ex = hgj_offX + to.x * hgj_scale + NODE_W * hgj_scale / 2;
+            ey = hgj_offY + to.y * hgj_scale;
+
+            var isActive = activeFrom && (e.from === activeFrom || e.to === activeFrom);
+            var alpha = isActive ? 0.85 : 0.18;
+            var width = isActive ? 2.2 : 1;
+
+            hgj_ctx.save();
+            hgj_ctx.beginPath();
+            hgj_ctx.moveTo(sx, sy);
+            var cdy = (ey - sy) * 0.55;
+            hgj_ctx.bezierCurveTo(sx, sy + cdy, ex, ey - cdy, ex, ey);
+            hgj_ctx.strokeStyle = hgj_hexToRgba(e.color, alpha);
+            hgj_ctx.lineWidth = width * Math.max(1, hgj_scale * 0.8);
+            if (isActive) {
+                hgj_ctx.shadowColor = hgj_hexToRgba(e.color, 0.9);
+                hgj_ctx.shadowBlur = 12;
+                hgj_ctx.setLineDash([7, 5]);
+                hgj_ctx.lineDashOffset = -hgj_time * 0.05;
+            }
+            hgj_ctx.stroke();
+            hgj_ctx.restore();
+        }
+    }
+
+    function hgj_drawNodes() {
+        var i, n, sx, sy, sw, sh, color;
+        for (i = 0; i < hgj_nodes.length; i++) {
+            n = hgj_nodes[i];
+            color = n.color;
+            sx = hgj_offX + n.x * hgj_scale;
+            sy = hgj_offY + n.y * hgj_scale;
+            sw = n.w * hgj_scale;
+            sh = n.h * hgj_scale;
+            var isHover = hgj_hoverNode && hgj_hoverNode.id === n.id;
+
+            hgj_ctx.save();
+            hgj_roundRect(hgj_ctx, sx, sy, sw, sh, Math.max(6, 12 * hgj_scale));
+            var g = hgj_ctx.createLinearGradient(sx, sy, sx + sw, sy + sh);
+            if (isHover) {
+                g.addColorStop(0, hgj_hexToRgba(color, 0.42));
+                g.addColorStop(1, hgj_hexToRgba(color, 0.18));
+                hgj_ctx.shadowColor = hgj_hexToRgba(color, 0.85);
+                hgj_ctx.shadowBlur = 22;
+            } else {
+                g.addColorStop(0, hgj_hexToRgba(color, 0.16));
+                g.addColorStop(1, 'rgba(15,23,42,0.55)');
+            }
+            hgj_ctx.fillStyle = g;
+            hgj_ctx.fill();
+
+            hgj_ctx.lineWidth = isHover ? 2 : 1;
+            hgj_ctx.strokeStyle = hgj_hexToRgba(color, isHover ? 0.95 : 0.5);
+            hgj_ctx.stroke();
+
+            // 左侧色条
+            hgj_ctx.shadowBlur = 0;
+            hgj_ctx.fillStyle = hgj_hexToRgba(color, isHover ? 1 : 0.75);
+            hgj_roundRect(hgj_ctx, sx + 1, sy + sh * 0.18, 3 * Math.max(1, hgj_scale * 0.8), sh * 0.64, 2);
+            hgj_ctx.fill();
+
+            // 名称
+            var fs = Math.max(8, 15 * hgj_scale);
+            hgj_ctx.font = '700 ' + fs + 'px "Microsoft YaHei", sans-serif';
+            hgj_ctx.fillStyle = isHover ? '#f8fafc' : '#e2e8f0';
+            hgj_ctx.textAlign = 'left';
+            hgj_ctx.textBaseline = 'middle';
+            hgj_ctx.fillText(n.name, sx + 16 * hgj_scale, sy + sh / 2 - fs * 0.34);
+
+            // 副标题
+            var fs2 = Math.max(6, 9 * hgj_scale);
+            hgj_ctx.font = '400 ' + fs2 + 'px Consolas, monospace';
+            hgj_ctx.fillStyle = hgj_hexToRgba(color, isHover ? 0.95 : 0.6);
+            hgj_ctx.fillText(n.layer.toUpperCase(), sx + 16 * hgj_scale, sy + sh / 2 + fs * 0.72);
+
+            // hover 光点
+            if (isHover) {
+                hgj_ctx.beginPath();
+                hgj_ctx.arc(sx + sw - 14 * hgj_scale, sy + 14 * hgj_scale, 3.2 * Math.max(1, hgj_scale * 0.8), 0, Math.PI * 2);
+                hgj_ctx.fillStyle = color;
+                hgj_ctx.shadowColor = color;
+                hgj_ctx.shadowBlur = 10;
+                hgj_ctx.fill();
+            }
+            hgj_ctx.restore();
+        }
+    }
+
+    // ===== 主循环 =====
+    var hgj_lastTs = 0;
+    function hgj_loop(ts) {
+        var dt = hgj_lastTs ? Math.min(ts - hgj_lastTs, 40) : 16;
+        hgj_lastTs = ts;
+        hgj_time += dt;
+
+        hgj_drawBackground();
+        hgj_drawLayerBands();
+        hgj_drawEdges();
+        hgj_drawNodes();
+
+        requestAnimationFrame(hgj_loop);
+    }
+
+    // ===== 命中检测 =====
+    function hgj_hitTest(wx, wy) {
+        var i, n;
+        for (i = hgj_nodes.length - 1; i >= 0; i--) {
+            n = hgj_nodes[i];
+            if (wx >= n.x && wx <= n.x + n.w && wy >= n.y && wy <= n.y + n.h) return n;
+        }
+        return null;
+    }
+
+    function hgj_updateTooltip(node, sx, sy) {
+        if (!node) { hgj_tip.classList.remove('hgj_show'); return; }
+        hgj_tipLayer.textContent = hgj_layerMeta[node.layer].name;
+        hgj_tipName.textContent = node.name;
+        hgj_tipDesc.textContent = node.desc;
+        hgj_tipDot.style.background = node.color;
+        hgj_tipDot.style.boxShadow = '0 0 8px ' + node.color;
+
+        var tipW = 250, tipH = 110;
+        var tx = sx + 16, ty = sy + 16;
+        if (tx + tipW > hgj_w) tx = sx - tipW - 16;
+        if (ty + tipH > hgj_h) ty = sy - tipH - 16;
+        if (tx < 8) tx = 8;
+        if (ty < 8) ty = 8;
+        hgj_tip.style.left = tx + 'px';
+        hgj_tip.style.top = ty + 'px';
+        hgj_tip.classList.add('hgj_show');
+    }
+
+    // ===== 交互：拖拽平移 =====
+    hgj_canvas.addEventListener('pointerdown', function (e) {
+        hgj_isDragging = true;
+        hgj_lastPt.x = e.clientX;
+        hgj_lastPt.y = e.clientY;
+        hgj_canvas.classList.add('hgj_grabbing');
+        hgj_canvas.setPointerCapture(e.pointerId);
+    });
+
+    hgj_canvas.addEventListener('pointermove', function (e) {
+        var rect = hgj_canvas.getBoundingClientRect();
+        var sx = e.clientX - rect.left;
+        var sy = e.clientY - rect.top;
+        hgj_mouseScreen.x = sx;
+        hgj_mouseScreen.y = sy;
+
+        if (hgj_isDragging) {
+            hgj_offX += e.clientX - hgj_lastPt.x;
+            hgj_offY += e.clientY - hgj_lastPt.y;
+            hgj_lastPt.x = e.clientX;
+            hgj_lastPt.y = e.clientY;
+            hgj_tip.classList.remove('hgj_show');
+            hgj_hoverNode = null;
+            return;
+        }
+
+        var w = hgj_screenToWorld(sx, sy);
+        var node = hgj_hitTest(w.x, w.y);
+        if (node !== hgj_hoverNode) {
+            hgj_hoverNode = node;
+        }
+        hgj_updateTooltip(node, sx, sy);
+    });
+
+    hgj_canvas.addEventListener('pointerup', function (e) {
+        hgj_isDragging = false;
+        hgj_canvas.classList.remove('hgj_grabbing');
+        try { hgj_canvas.releasePointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    hgj_canvas.addEventListener('pointerleave', function () {
+        hgj_isDragging = false;
+        hgj_hoverNode = null;
+        hgj_tip.classList.remove('hgj_show');
+        hgj_canvas.classList.remove('hgj_grabbing');
+    });
+
+    // ===== 交互：滚轮缩放 =====
+    hgj_canvas.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        var rect = hgj_canvas.getBoundingClientRect();
+        var sx = e.clientX - rect.left;
+        var sy = e.clientY - rect.top;
+
+        var factor = e.deltaY < 0 ? 1.12 : 0.89;
+        var newScale = Math.min(2.6, Math.max(0.4, hgj_scale * factor));
+        var ratio = newScale / hgj_scale;
+
+        hgj_offX = sx - (sx - hgj_offX) * ratio;
+        hgj_offY = sy - (sy - hgj_offY) * ratio;
+        hgj_scale = newScale;
+
+        hgj_hoverNode = hgj_hitTest(hgj_screenToWorld(sx, sy).x, hgj_screenToWorld(sx, sy).y);
+        hgj_updateTooltip(hgj_hoverNode, sx, sy);
+    }, { passive: false });
+
+    // ===== 按钮 =====
+    function hgj_zoomAt(factor) {
+        var cx = hgj_w / 2, cy = hgj_h / 2;
+        var newScale = Math.min(2.6, Math.max(0.4, hgj_scale * factor));
+        var ratio = newScale / hgj_scale;
+        hgj_offX = cx - (cx - hgj_offX) * ratio;
+        hgj_offY = cy - (cy - hgj_offY) * ratio;
+        hgj_scale = newScale;
+    }
+
+    document.getElementById('hgj_zoomIn').addEventListener('click', function () { hgj_zoomAt(1.25); });
+    document.getElementById('hgj_zoomOut').addEventListener('click', function () { hgj_zoomAt(0.8); });
+    document.getElementById('hgj_reset').addEventListener('click', hgj_fitView);
+    document.getElementById('hgj_center').addEventListener('click', function () {
+        hgj_offX = (hgj_w - HGD_WORLD_W * hgj_scale) / 2;
+        hgj_offY = (hgj_h - HGD_WORLD_H * hgj_scale) / 2;
+    });
+
+    window.addEventListener('resize', function () {
+        hgj_resize();
+        hgj_fitView();
+    });
+
+    // ===== 启动 =====
+    hgj_resize();
+    hgj_fitView();
+    requestAnimationFrame(hgj_loop);
+})();
+</script>
+</body>
+</html>

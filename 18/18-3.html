@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-3 SVG 知识库智能客服系统架构图</title>
+<!-- 姓名：胡国静，日期：18-3 SVG智能客服架构图 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Georgia", "Songti SC", "SimSun", "Microsoft YaHei", serif;
+        min-height: 100vh; padding: 2rem 1rem 2.4rem;
+        background:
+            radial-gradient(circle at 12% 8%, rgba(15,118,110,0.07) 0%, transparent 42%),
+            radial-gradient(circle at 88% 92%, rgba(30,58,95,0.07) 0%, transparent 46%),
+            linear-gradient(150deg, #fbfaf7 0%, #f7f9fb 55%, #faf8f5 100%);
+        color: #1e293b; display: flex; flex-direction: column; align-items: center;
+    }
+    .hgj_back {
+        position: fixed; top: 1.2rem; right: 1.4rem;
+        padding: 0.55em 1.2em; font-size: 0.82rem;
+        font-family: "Microsoft YaHei", sans-serif;
+        color: #334155; text-decoration: none;
+        background: rgba(255,255,255,0.8);
+        border: 1px solid rgba(148,163,184,0.4);
+        border-radius: 2em; backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+        transition: all 0.3s ease; z-index: 30;
+    }
+    .hgj_back:hover { background: #0f766e; color: #fff; border-color: #0f766e; transform: translateY(-2px); }
+
+    .hgj_header {
+        text-align: center; margin-bottom: 1.4rem;
+        animation: hgj_head-in 0.9s cubic-bezier(.22,1,.36,1) both;
+    }
+    .hgj_header h1 {
+        font-size: clamp(1.15rem, 2.6vw, 1.55rem);
+        font-weight: 700; letter-spacing: 0.1em; color: #0f172a;
+    }
+    .hgj_header .hgj_en {
+        display: block; margin-top: 0.45rem;
+        font-size: 0.7rem; letter-spacing: 0.22em;
+        color: #94a3b8; text-transform: uppercase;
+        font-family: "Consolas", monospace;
+    }
+    .hgj_header::after {
+        content: ''; display: block; width: 70px; height: 2px; margin: 0.9rem auto 0;
+        background: linear-gradient(90deg, transparent, #0f766e, transparent);
+    }
+    @keyframes hgj_head-in {
+        from { opacity: 0; transform: translateY(-14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 3D 入场 */
+    .hgj_stage { perspective: 1500px; width: min(96vw, 1180px); }
+    .hgj_paper {
+        position: relative; border-radius: 0.6rem; overflow: hidden;
+        background: rgba(255,255,255,0.92);
+        border: 1px solid rgba(148,163,184,0.32);
+        box-shadow: 0 26px 54px -26px rgba(30,58,95,0.3), 0 2px 8px rgba(30,58,95,0.05);
+        transform-style: preserve-3d;
+        animation: hgj_paper-in 1s cubic-bezier(.22,1,.36,1) both;
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+    .hgj_paper:hover {
+        transform: rotateX(0.6deg) translateZ(12px);
+        box-shadow: 0 34px 66px -26px rgba(30,58,95,0.38), 0 0 30px -14px rgba(15,118,110,0.35);
+    }
+    @keyframes hgj_paper-in {
+        from { opacity: 0; transform: rotateX(12deg) translateY(26px); }
+        to { opacity: 1; transform: rotateX(0) translateY(0); }
+    }
+    /* 图注 */
+    .hgj_fig-tag {
+        position: absolute; top: 0.7rem; left: 1rem;
+        font-family: "Consolas", monospace; font-size: 0.66rem;
+        letter-spacing: 0.16em; color: #94a3b8; text-transform: uppercase; z-index: 2;
+    }
+    .hgj_corner {
+        position: absolute; width: 14px; height: 14px; border-color: rgba(15,118,110,0.5);
+        border-style: solid; border-width: 0; z-index: 2;
+    }
+    .hgj_corner.tl { top: 0.5rem; left: 0.5rem; border-top-width: 2px; border-left-width: 2px; }
+    .hgj_corner.tr { top: 0.5rem; right: 0.5rem; border-top-width: 2px; border-right-width: 2px; }
+    .hgj_corner.bl { bottom: 0.5rem; left: 0.5rem; border-bottom-width: 2px; border-left-width: 2px; }
+    .hgj_corner.br { bottom: 0.5rem; right: 0.5rem; border-bottom-width: 2px; border-right-width: 2px; }
+
+    svg { display: block; width: 100%; height: auto; }
+
+    /* 模块 */
+    .hgj_mod { cursor: pointer; transition: transform 0.28s cubic-bezier(.22,1,.36,1); }
+    .hgj_mod:hover, .hgj_mod.hgj_active { transform: translateY(-5px); }
+    .hgj_mod .hgj_mod-bg {
+        fill: #ffffff; stroke: #cbd5e1; stroke-width: 1.4;
+        transition: fill 0.28s ease, stroke 0.28s ease, filter 0.28s ease;
+        filter: drop-shadow(0 2px 4px rgba(30,58,95,0.06));
+    }
+    .hgj_mod:hover .hgj_mod-bg, .hgj_mod.hgj_active .hgj_mod-bg {
+        fill: #f0fdfa; stroke: #0f766e; filter: drop-shadow(0 10px 18px rgba(15,118,110,0.28));
+    }
+    .hgj_mod .hgj_mod-accent {
+        fill: #0f766e; opacity: 0.85;
+        transition: opacity 0.28s ease;
+    }
+    .hgj_mod:hover .hgj_mod-accent, .hgj_mod.hgj_active .hgj_mod-accent { opacity: 1; }
+    .hgj_mod .hgj_mod-title {
+        font-family: "Georgia", "Songti SC", "SimSun", serif;
+        font-size: 15.5px; font-weight: 700; fill: #0f172a;
+        transition: fill 0.28s ease;
+    }
+    .hgj_mod:hover .hgj_mod-title, .hgj_mod.hgj_active .hgj_mod-title { fill: #0f766e; }
+    .hgj_mod .hgj_mod-code {
+        font-family: "Consolas", monospace; font-size: 9px;
+        letter-spacing: 0.18em; fill: #94a3b8; text-transform: uppercase;
+    }
+    .hgj_mod .hgj_mod-index {
+        font-family: "Georgia", serif; font-size: 11px; font-style: italic;
+        fill: #0f766e; opacity: 0.75;
+    }
+    .hgj_mod .hgj_mod-icon-bg {
+        fill: #f1f5f9; stroke: #e2e8f0; stroke-width: 1;
+        transition: fill 0.28s ease, stroke 0.28s ease;
+    }
+    .hgj_mod:hover .hgj_mod-icon-bg, .hgj_mod.hgj_active .hgj_mod-icon-bg {
+        fill: #ccfbf1; stroke: #5eead4;
+    }
+    .hgj_mod .hgj_mod-icon {
+        font-size: 19px; fill: #0f766e; opacity: 0.9;
+    }
+
+    /* 连接线 */
+    .hgj_link path, .hgj_link polygon { transition: stroke 0.28s ease, fill 0.28s ease, filter 0.28s ease; }
+    .hgj_link path { stroke: #cbd5e1; stroke-width: 1.8; stroke-dasharray: 7 5; animation: hgj_dash 4s linear infinite; }
+    .hgj_link polygon { fill: #cbd5e1; }
+    .hgj_link.hgj_active path {
+        stroke: #0d9488; stroke-width: 2.6; filter: drop-shadow(0 0 5px rgba(13,148,136,0.65));
+        animation-duration: 1.4s;
+    }
+    .hgj_link.hgj_active polygon { fill: #0d9488; filter: drop-shadow(0 0 4px rgba(13,148,136,0.55)); }
+    @keyframes hgj_dash { to { stroke-dashoffset: -24; } }
+
+    /* 知识库虚线 */
+    .hgj_kb-link { stroke: #94a3b8; stroke-width: 1.4; stroke-dasharray: 5 4; }
+    .hgj_kb-link.hgj_active { stroke: #0d9488; filter: drop-shadow(0 0 4px rgba(13,148,136,0.55)); }
+    .hgj_kb { transition: fill 0.28s ease, stroke 0.28s ease, filter 0.28s ease; }
+    .hgj_kb:hover, .hgj_kb.hgj_active {
+        fill: #f0fdfa; stroke: #0f766e;
+        filter: drop-shadow(0 8px 14px rgba(15,118,110,0.22));
+    }
+    .hgj_kb text { transition: fill 0.28s ease; }
+
+    /* 说明面板 */
+    .hgj_desc {
+        width: min(96vw, 1180px); margin-top: 1.1rem;
+        display: grid; grid-template-columns: 3px 1fr; gap: 0.9rem;
+        background: rgba(255,255,255,0.82);
+        border: 1px solid rgba(148,163,184,0.3);
+        border-radius: 0.5rem; padding: 0.9rem 1.2rem;
+        box-shadow: 0 10px 26px -18px rgba(30,58,95,0.35);
+        transition: box-shadow 0.3s ease, transform 0.3s ease;
+        min-height: 84px;
+    }
+    .hgj_desc.hgj_active { box-shadow: 0 14px 34px -18px rgba(15,118,110,0.45); transform: translateY(-2px); }
+    .hgj_desc-bar { border-radius: 2px; background: linear-gradient(180deg, #0f766e, #5eead4); transition: background 0.3s ease; }
+    .hgj_desc-body h3 {
+        font-size: 0.92rem; font-weight: 700; color: #0f172a; margin-bottom: 0.3rem;
+        display: flex; align-items: center; gap: 0.5rem; letter-spacing: 0.03em;
+    }
+    .hgj_desc-body h3 span { font-size: 0.66rem; color: #0f766e; font-family: "Consolas", monospace; letter-spacing: 0.14em; font-weight: 400; }
+    .hgj_desc-body p { font-size: 0.8rem; line-height: 1.8; color: #475569; }
+
+    .hgj_hint {
+        margin-top: 1rem; font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.04em;
+        font-family: "Microsoft YaHei", sans-serif;
+    }
+    .hgj_hint b { color: #0f766e; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_header">
+    <h1>基于知识库的智能客服系统架构</h1>
+    <span class="hgj_en">Knowledge-Grounded Customer Service Pipeline</span>
+</div>
+
+<div class="hgj_stage">
+    <div class="hgj_paper">
+        <div class="hgj_fig-tag">Fig. 1 — System Pipeline</div>
+        <div class="hgj_corner tl"></div><div class="hgj_corner tr"></div>
+        <div class="hgj_corner bl"></div><div class="hgj_corner br"></div>
+
+        <svg viewBox="0 0 1180 500" id="hgj_svg" role="img" aria-label="智能客服系统架构图">
+            <defs>
+                <pattern id="hgj_grid" width="26" height="26" patternUnits="userSpaceOnUse">
+                    <path d="M 26 0 L 0 0 0 26" fill="none" stroke="rgba(30,58,95,0.055)" stroke-width="1"/>
+                </pattern>
+            </defs>
+
+            <rect x="0" y="0" width="1180" height="500" fill="url(#hgj_grid)"/>
+            <rect x="24" y="24" width="1132" height="452" fill="none"
+                  stroke="rgba(30,58,95,0.14)" stroke-width="1"/>
+
+            <!-- 顶部流程说明 -->
+            <text x="48" y="62" font-family="Georgia, serif" font-size="11"
+                  fill="#94a3b8" letter-spacing="2">QUERY PIPELINE · 5 STAGES</text>
+
+            <!-- 连接线（放在模块下层） -->
+            <g class="hgj_link" data-link="0">
+                <path d="M 290 236 L 344 236"/>
+                <polygon points="344,232 352,236 344,240"/>
+            </g>
+            <g class="hgj_link" data-link="1">
+                <path d="M 518 236 L 572 236"/>
+                <polygon points="572,232 580,236 572,240"/>
+            </g>
+            <g class="hgj_link" data-link="2">
+                <path d="M 746 236 L 800 236"/>
+                <polygon points="800,232 808,236 800,240"/>
+            </g>
+            <g class="hgj_link" data-link="3">
+                <path d="M 974 236 L 1028 236"/>
+                <polygon points="1028,232 1036,236 1028,240"/>
+            </g>
+
+            <!-- 知识库 → 检索 -->
+            <path class="hgj_kb-link" id="hgj_kbLink" d="M 633 352 L 633 296"/>
+
+            <!-- 模块 01 用户输入 -->
+            <g transform="translate(120, 195)">
+                <g class="hgj_mod" data-idx="0" tabindex="0">
+                    <rect class="hgj_mod-bg" x="0" y="0" width="170" height="82" rx="10"/>
+                    <rect class="hgj_mod-accent" x="0" y="14" width="3" height="54" rx="1.5"/>
+                    <text class="hgj_mod-index" x="16" y="96">01</text>
+                    <circle class="hgj_mod-icon-bg" cx="36" cy="52" r="17"/>
+                    <text class="hgj_mod-icon" x="36" y="58" text-anchor="middle">⌨</text>
+                    <text class="hgj_mod-title" x="62" y="46">用户输入</text>
+                    <text class="hgj_mod-code" x="62" y="64">USER INPUT</text>
+                </g>
+            </g>
+
+            <!-- 模块 02 意图识别 -->
+            <g transform="translate(348, 195)">
+                <g class="hgj_mod" data-idx="1" tabindex="0">
+                    <rect class="hgj_mod-bg" x="0" y="0" width="170" height="82" rx="10"/>
+                    <rect class="hgj_mod-accent" x="0" y="14" width="3" height="54" rx="1.5"/>
+                    <text class="hgj_mod-index" x="16" y="96">02</text>
+                    <circle class="hgj_mod-icon-bg" cx="36" cy="52" r="17"/>
+                    <text class="hgj_mod-icon" x="36" y="58" text-anchor="middle">◈</text>
+                    <text class="hgj_mod-title" x="62" y="46">意图识别</text>
+                    <text class="hgj_mod-code" x="62" y="64">INTENT</text>
+                </g>
+            </g>
+
+            <!-- 模块 03 知识库检索 -->
+            <g transform="translate(576, 195)">
+                <g class="hgj_mod" data-idx="2" tabindex="0">
+                    <rect class="hgj_mod-bg" x="0" y="0" width="170" height="82" rx="10"/>
+                    <rect class="hgj_mod-accent" x="0" y="14" width="3" height="54" rx="1.5"/>
+                    <text class="hgj_mod-index" x="16" y="96">03</text>
+                    <circle class="hgj_mod-icon-bg" cx="36" cy="52" r="17"/>
+                    <text class="hgj_mod-icon" x="36" y="58" text-anchor="middle">⌕</text>
+                    <text class="hgj_mod-title" x="62" y="46">知识库检索</text>
+                    <text class="hgj_mod-code" x="62" y="64">RETRIEVAL</text>
+                </g>
+            </g>
+
+            <!-- 模块 04 答案生成 -->
+            <g transform="translate(804, 195)">
+                <g class="hgj_mod" data-idx="3" tabindex="0">
+                    <rect class="hgj_mod-bg" x="0" y="0" width="170" height="82" rx="10"/>
+                    <rect class="hgj_mod-accent" x="0" y="14" width="3" height="54" rx="1.5"/>
+                    <text class="hgj_mod-index" x="16" y="96">04</text>
+                    <circle class="hgj_mod-icon-bg" cx="36" cy="52" r="17"/>
+                    <text class="hgj_mod-icon" x="36" y="58" text-anchor="middle">✎</text>
+                    <text class="hgj_mod-title" x="62" y="46">答案生成</text>
+                    <text class="hgj_mod-code" x="62" y="64">GENERATION</text>
+                </g>
+            </g>
+
+            <!-- 模块 05 回复输出 -->
+            <g transform="translate(1032, 195)">
+                <g class="hgj_mod" data-idx="4" tabindex="0">
+                    <rect class="hgj_mod-bg" x="0" y="0" width="170" height="82" rx="10"/>
+                    <rect class="hgj_mod-accent" x="0" y="14" width="3" height="54" rx="1.5"/>
+                    <text class="hgj_mod-index" x="16" y="96">05</text>
+                    <circle class="hgj_mod-icon-bg" cx="36" cy="52" r="17"/>
+                    <text class="hgj_mod-icon" x="36" y="58" text-anchor="middle">➤</text>
+                    <text class="hgj_mod-title" x="62" y="46">回复输出</text>
+                    <text class="hgj_mod-code" x="62" y="64">RESPONSE</text>
+                </g>
+            </g>
+
+            <!-- 知识库 -->
+            <g transform="translate(548, 352)">
+                <g class="hgj_kb" data-idx="5" tabindex="0">
+                    <rect x="0" y="0" width="170" height="76" rx="8"
+                          fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="6 4"/>
+                    <text x="16" y="28" font-family="Georgia, serif" font-size="12.5"
+                          font-weight="700" fill="#334155">知识库 KB</text>
+                    <text x="16" y="46" font-family="Consolas, monospace" font-size="8.5"
+                          fill="#94a3b8" letter-spacing="1">DOC / FAQ / VECTOR</text>
+                    <text x="16" y="62" font-family="Consolas, monospace" font-size="8.5"
+                          fill="#0f766e">Top-K 召回 + 重排序</text>
+                </g>
+            </g>
+
+            <!-- 右侧注解 -->
+            <text x="860" y="392" font-family="Consolas, monospace" font-size="9"
+                  fill="#94a3b8" letter-spacing="1">↳ 召回切片送入上下文窗口</text>
+            <text x="120" y="392" font-family="Consolas, monospace" font-size="9"
+                  fill="#94a3b8" letter-spacing="1">↳ 多轮会话上下文保持</text>
+
+            <!-- 底部流程标注线 -->
+            <line x1="120" y1="430" x2="1202" y2="430" stroke="rgba(30,58,95,0.18)" stroke-width="1"/>
+            <text x="48" y="452" font-family="Georgia, serif" font-size="10" fill="#94a3b8"
+                  letter-spacing="2">FIG. 1 — 知识库增强的检索式问答流水线</text>
+            <text x="1132" y="452" text-anchor="end" font-family="Consolas, monospace" font-size="9"
+                  fill="#94a3b8">RAG PIPELINE</text>
+        </svg>
+    </div>
+</div>
+
+<div class="hgj_desc" id="hgj_desc">
+    <div class="hgj_desc-bar" id="hgj_descBar"></div>
+    <div class="hgj_desc-body">
+        <h3 id="hgj_descTitle">模块说明 <span id="hgj_descCode">HOVER TO INSPECT</span></h3>
+        <p id="hgj_descText">将鼠标悬停在任一模块上，可查看该环节的职责说明；对应的连接路径会同步高亮，展示数据流向。</p>
+    </div>
+</div>
+
+<p class="hgj_hint">提示：<b>悬浮模块</b> 高亮并联动路径变色 · <b>知识库</b> 通过虚线接入检索环节 · 键盘 <b>Tab</b> 可逐个聚焦</p>
+
+<script>
+(function () {
+    var hgj_desc = document.getElementById('hgj_desc');
+    var hgj_descTitle = document.getElementById('hgj_descTitle');
+    var hgj_descCode = document.getElementById('hgj_descCode');
+    var hgj_descText = document.getElementById('hgj_descText');
+    var hgj_descBar = document.getElementById('hgj_descBar');
+    var hgj_kbLink = document.getElementById('hgj_kbLink');
+
+    var hgj_modules = [
+        { name: '用户输入', code: 'USER INPUT', color: '#0f766e',
+          desc: '接收来自网页、APP、公众号等渠道的用户自然语言问题，完成文本清洗、会话标识与多轮上下文装配。' },
+        { name: '意图识别', code: 'INTENT', color: '#0e7490',
+          desc: '基于分类模型与规则词典判断用户诉求类型（咨询 / 办理 / 投诉），同时抽取商品、订单等关键槽位。' },
+        { name: '知识库检索', code: 'RETRIEVAL', color: '#0d9488',
+          desc: '将问题向量化后在知识库中执行混合检索（BM25 + 向量召回），取 Top-K 文档片段并做重排序。' },
+        { name: '答案生成', code: 'GENERATION', color: '#0f766e',
+          desc: '把召回片段作为上下文注入大模型，约束生成口径，输出带引用来源的客服答复并做合规校验。' },
+        { name: '回复输出', code: 'RESPONSE', color: '#0e7490',
+          desc: '按渠道格式渲染答复，附带推荐追问与转人工兜底；同时回流日志用于后续效果评估与知识库更新。' },
+        { name: '知识库 KB', code: 'KNOWLEDGE BASE', color: '#334155',
+          desc: '存放 FAQ、产品文档与业务规则，定期做文档切片、向量索引重建，是检索增强生成的事实来源。' }
+    ];
+
+    var hgj_linkGroups = document.querySelectorAll('.hgj_link');
+
+    function hgj_clearAll() {
+        document.querySelectorAll('.hgj_mod.hgj_active').forEach(function (el) { el.classList.remove('hgj_active'); });
+        document.querySelectorAll('.hgj_kb.hgj_active').forEach(function (el) { el.classList.remove('hgj_active'); });
+        hgj_linkGroups.forEach(function (g) { g.classList.remove('hgj_active'); });
+        hgj_kbLink.classList.remove('hgj_active');
+    }
+
+    function hgj_activate(idx) {
+        hgj_clearAll();
+        var data = hgj_modules[idx];
+        var modEl, i;
+
+        // 模块高亮
+        document.querySelectorAll('.hgj_mod, .hgj_kb').forEach(function (el) {
+            if (parseInt(el.getAttribute('data-idx'), 10) === idx) {
+                el.classList.add('hgj_active');
+                modEl = el;
+            }
+        });
+
+        // 路径高亮：模块 i 高亮 出向 link i 与 入向 link i-1
+        if (idx < 5) {
+            hgj_linkGroups.forEach(function (g) {
+                var li = parseInt(g.getAttribute('data-link'), 10);
+                if (li === idx || li === idx - 1) g.classList.add('hgj_active');
+            });
+        }
+        if (idx === 2) hgj_kbLink.classList.add('hgj_active');
+        if (idx === 5) hgj_kbLink.classList.add('hgj_active');
+
+        // 说明面板
+        hgj_descTitle.innerHTML = data.name + ' <span id="hgj_descCode">' + data.code + '</span>';
+        hgj_descCode = document.getElementById('hgj_descCode');
+        hgj_descText.textContent = data.desc;
+        hgj_descBar.style.background = 'linear-gradient(180deg, ' + data.color + ', #5eead4)';
+        hgj_desc.classList.add('hgj_active');
+    }
+
+    function hgj_resetDesc() {
+        hgj_clearAll();
+        hgj_descTitle.innerHTML = '模块说明 <span id="hgj_descCode">HOVER TO INSPECT</span>';
+        hgj_descText.textContent = '将鼠标悬停在任一模块上，可查看该环节的职责说明；对应的连接路径会同步高亮，展示数据流向。';
+        hgj_descBar.style.background = 'linear-gradient(180deg, #0f766e, #5eead4)';
+        hgj_desc.classList.remove('hgj_active');
+    }
+
+    document.querySelectorAll('.hgj_mod, .hgj_kb').forEach(function (el) {
+        var idx = parseInt(el.getAttribute('data-idx'), 10);
+        el.addEventListener('mouseenter', function () { hgj_activate(idx); });
+        el.addEventListener('mouseleave', hgj_resetDesc);
+        el.addEventListener('focus', function () { hgj_activate(idx); });
+        el.addEventListener('blur', hgj_resetDesc);
+        el.addEventListener('click', function () { hgj_activate(idx); });
+    });
+})();
+</script>
+</body>
+</html>

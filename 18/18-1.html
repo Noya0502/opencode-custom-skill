@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-1 Canvas 文字动画 · 胡国静</title>
+<!-- 姓名：胡国静，日期：18-1 Canvas文字动画 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1.4rem;
+        padding: 2rem 1rem;
+        background: radial-gradient(circle at 18% 12%, #eef2ff 0%, transparent 45%),
+                    radial-gradient(circle at 82% 88%, #fdf2f8 0%, transparent 50%),
+                    linear-gradient(140deg, #f8fafc 0%, #eef7ff 55%, #fdf4ff 100%);
+        overflow: hidden;
+    }
+    .hgj_back {
+        position: fixed; top: 1.25rem; right: 1.5rem;
+        padding: 0.55em 1.2em; font-size: 0.85rem;
+        color: #475569; text-decoration: none;
+        background: rgba(255,255,255,0.75);
+        border: 1px solid rgba(148,163,184,0.35);
+        border-radius: 2em;
+        backdrop-filter: blur(10px);
+        box-shadow: 0 4px 14px rgba(15,23,42,0.06);
+        transition: all 0.3s ease; z-index: 20;
+    }
+    .hgj_back:hover {
+        background: #6366f1; color: #fff; border-color: #6366f1;
+        transform: translateY(-2px) scale(1.03);
+    }
+    .hgj_title {
+        text-align: center;
+        animation: hgj_title-in 0.9s cubic-bezier(.22,1,.36,1) both;
+    }
+    .hgj_title h1 {
+        font-size: clamp(1.1rem, 2.6vw, 1.5rem);
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: #1e293b;
+    }
+    .hgj_title p {
+        margin-top: 0.4rem; font-size: 0.78rem; color: #94a3b8; letter-spacing: 0.05em;
+    }
+    @keyframes hgj_title-in {
+        from { opacity: 0; transform: translateY(-14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 3D 舞台：perspective + preserve-3d */
+    .hgj_stage {
+        perspective: 1400px;
+        width: min(88vw, 860px);
+    }
+    .hgj_canvas-card {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 1.4rem;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ffffff 0%, #f1f5ff 50%, #fdf1fb 100%);
+        box-shadow: 0 30px 60px -18px rgba(79,70,229,0.28),
+                    0 10px 22px -10px rgba(236,72,153,0.18);
+        transform-style: preserve-3d;
+        transition: transform 0.25s ease-out, box-shadow 0.3s ease;
+        will-change: transform;
+    }
+    .hgj_canvas-card::before,
+    .hgj_canvas-card::after {
+        content: '';
+        position: absolute; border-radius: 50%;
+        filter: blur(46px);
+        pointer-events: none; z-index: 0;
+    }
+    .hgj_canvas-card::before {
+        width: 40%; aspect-ratio: 1;
+        left: -8%; top: -12%;
+        background: rgba(99,102,241,0.22);
+        animation: hgj_blob 9s ease-in-out infinite alternate;
+    }
+    .hgj_canvas-card::after {
+        width: 36%; aspect-ratio: 1;
+        right: -6%; bottom: -14%;
+        background: rgba(236,72,153,0.2);
+        animation: hgj_blob 11s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes hgj_blob {
+        0% { transform: translate3d(0,0,0) scale(1); }
+        100% { transform: translate3d(28px,-22px,0) scale(1.18); }
+    }
+    canvas { display: block; width: 100%; height: 100%; position: relative; z-index: 1; cursor: crosshair; }
+
+    .hgj_toolbar {
+        display: flex; gap: 0.65rem; flex-wrap: wrap; justify-content: center;
+        animation: hgj_title-in 1s 0.2s cubic-bezier(.22,1,.36,1) both;
+    }
+    .hgj_btn {
+        padding: 0.62em 1.5em; font-size: 0.84rem; font-weight: 700;
+        font-family: inherit; cursor: pointer; border: none;
+        border-radius: 2em; color: #fff;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        box-shadow: 0 8px 20px -6px rgba(99,102,241,0.65);
+        transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+    }
+    .hgj_btn:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 12px 26px -6px rgba(99,102,241,0.8); }
+    .hgj_btn:active { transform: translateY(0) scale(0.98); }
+    .hgj_btn.hgj_btn-ghost {
+        background: rgba(255,255,255,0.85); color: #64748b;
+        border: 1px solid rgba(148,163,184,0.4);
+        box-shadow: 0 6px 16px -8px rgba(15,23,42,0.25);
+    }
+    .hgj_hint { font-size: 0.74rem; color: #94a3b8; letter-spacing: 0.04em; }
+    .hgj_hint b { color: #6366f1; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_title">
+    <h1>Canvas 文字动画</h1>
+    <p>鼠标移入变色 · 跟随浮动 · 渐显流光描边 · 粒子点缀</p>
+</div>
+
+<div class="hgj_stage">
+    <div class="hgj_canvas-card" id="hgj_card">
+        <canvas id="hgj_canvas"></canvas>
+    </div>
+</div>
+
+<div class="hgj_toolbar">
+    <button class="hgj_btn" id="hgj_toggle">⏸ 暂停动画</button>
+    <button class="hgj_btn hgj_btn-ghost" id="hgj_reset">↺ 重新渐显</button>
+</div>
+
+<p class="hgj_hint">提示：<b>移动鼠标</b> 让文字轻微跟随，<b>移入画布</b> 触发变色，<b>滚轮</b> 无效但可拖动画布 3D 倾斜</p>
+
+<script>
+(function () {
+    var hgj_canvas = document.getElementById('hgj_canvas');
+    var hgj_card = document.getElementById('hgj_card');
+    var hgj_ctx = hgj_canvas.getContext('2d');
+    var hgj_toggleBtn = document.getElementById('hgj_toggle');
+    var hgj_resetBtn = document.getElementById('hgj_reset');
+
+    var hgj_dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var hgj_w = 0, hgj_h = 0;
+    var hgj_running = true;
+    var hgj_hovered = false;
+    var hgj_time = 0;
+    var hgj_fadeStart = 0;          // 渐显起点（毫秒时间戳）
+    var hgj_offscreen = document.createElement('canvas');
+    var hgj_offCtx = hgj_offscreen.getContext('2d');
+
+    // 鼠标状态
+    var hgj_mouse = { x: 0, y: 0, tx: 0, ty: 0, inside: false };
+    var hgj_tilt = { rx: 0, ry: 0, trx: 0, try_: 0 };
+
+    // 粒子
+    var hgj_particles = [];
+
+    var hgj_palette = {
+        normal: ['#6366f1', '#8b5cf6', '#ec4899'],
+        hover:  ['#0ea5e9', '#22d3ee', '#f97316']
+    };
+
+    // ===== 尺寸自适应 =====
+    function hgj_resize() {
+        var rect = hgj_canvas.getBoundingClientRect();
+        hgj_w = rect.width;
+        hgj_h = rect.height;
+        hgj_canvas.width = Math.round(hgj_w * hgj_dpr);
+        hgj_canvas.height = Math.round(hgj_h * hgj_dpr);
+        hgj_ctx.setTransform(hgj_dpr, 0, 0, hgj_dpr, 0, 0);
+
+        // 离屏画布（用于计算文字包围盒）
+        hgj_offscreen.width = Math.round(hgj_w);
+        hgj_offscreen.height = Math.round(hgj_h);
+
+        hgj_initParticles();
+    }
+
+    // ===== 粒子初始化 =====
+    function hgj_initParticles() {
+        hgj_particles = [];
+        var count = Math.max(38, Math.round((hgj_w * hgj_h) / 14000));
+        for (var i = 0; i < count; i++) {
+            hgj_particles.push({
+                x: Math.random() * hgj_w,
+                y: Math.random() * hgj_h,
+                vx: (Math.random() - 0.5) * 0.32,
+                vy: (Math.random() - 0.5) * 0.32 - 0.08,
+                r: 1 + Math.random() * 2.6,
+                alpha: 0.18 + Math.random() * 0.5,
+                hue: Math.random() > 0.5 ? 245 : 325
+            });
+        }
+    }
+
+    // ===== 缓动 =====
+    function hgj_easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+
+    // ===== 绘制粒子层 =====
+    function hgj_drawParticles() {
+        var i, j, p, q, dx, dy, dist;
+        for (i = 0; i < hgj_particles.length; i++) {
+            p = hgj_particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < -10) p.x = hgj_w + 10;
+            if (p.x > hgj_w + 10) p.x = -10;
+            if (p.y < -10) p.y = hgj_h + 10;
+            if (p.y > hgj_h + 10) p.y = -10;
+
+            // 鼠标排斥
+            if (hgj_mouse.inside) {
+                dx = p.x - hgj_mouse.tx;
+                dy = p.y - hgj_mouse.ty;
+                dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 90 && dist > 0.001) {
+                    var force = (90 - dist) / 90 * 0.9;
+                    p.x += (dx / dist) * force;
+                    p.y += (dy / dist) * force;
+                }
+            }
+
+            hgj_ctx.beginPath();
+            hgj_ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            hgj_ctx.fillStyle = 'hsla(' + p.hue + ', 85%, 68%, ' + p.alpha + ')';
+            hgj_ctx.fill();
+        }
+
+        // 邻近连线
+        hgj_ctx.lineWidth = 0.7;
+        for (i = 0; i < hgj_particles.length; i++) {
+            p = hgj_particles[i];
+            for (j = i + 1; j < hgj_particles.length; j++) {
+                q = hgj_particles[j];
+                dx = p.x - q.x; dy = p.y - q.y;
+                dist = dx * dx + dy * dy;
+                if (dist < 15000) {
+                    hgj_ctx.beginPath();
+                    hgj_ctx.moveTo(p.x, p.y);
+                    hgj_ctx.lineTo(q.x, q.y);
+                    hgj_ctx.strokeStyle = 'rgba(129,140,248,' + (0.16 * (1 - dist / 15000)) + ')';
+                    hgj_ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // ===== 绘制文字 =====
+    function hgj_drawText() {
+        var text = '胡国静';
+        var size = Math.min(hgj_w / 4.6, hgj_h / 2.6, 168);
+        var font = '900 ' + size + 'px "KaiTi","STKaiti","Microsoft YaHei",serif';
+
+        hgj_offCtx.clearRect(0, 0, hgj_w, hgj_h);
+        hgj_offCtx.font = font;
+        var tw = hgj_offCtx.measureText(text).width;
+
+        // 渐显进度
+        var elapsed = performance.now() - hgj_fadeStart;
+        var fade = hgj_easeOut(Math.min(elapsed / 1500, 1));
+
+        // 浮动偏移（跟随鼠标 + 自身呼吸）
+        var baseX = hgj_w / 2 - tw / 2;
+        var baseY = hgj_h / 2 + size * 0.34;
+        var floatX = Math.sin(hgj_time * 0.0016) * 5 + hgj_mouse.tx * 0.035;
+        var floatY = Math.cos(hgj_time * 0.0021) * 4 + hgj_mouse.ty * 0.03;
+
+        var colors = hgj_hovered ? hgj_palette.hover : hgj_palette.normal;
+        var grad = hgj_ctx.createLinearGradient(baseX, baseY - size, baseX + tw, baseY);
+
+        if (hgj_hovered) {
+            grad.addColorStop(0, colors[0]);
+            grad.addColorStop(0.5, colors[1]);
+            grad.addColorStop(1, colors[2]);
+        } else {
+            grad.addColorStop(0, colors[0]);
+            grad.addColorStop(0.55, colors[1]);
+            grad.addColorStop(1, colors[2]);
+        }
+
+        hgj_ctx.save();
+        hgj_ctx.translate(baseX + floatX, baseY + floatY);
+        hgj_ctx.globalAlpha = fade;
+        hgj_ctx.font = font;
+        hgj_ctx.textBaseline = 'alphabetic';
+
+        // 柔光投影
+        hgj_ctx.shadowColor = hgj_hovered ? 'rgba(14,165,233,0.55)' : 'rgba(139,92,246,0.45)';
+        hgj_ctx.shadowBlur = 26 + Math.sin(hgj_time * 0.003) * 8;
+
+        // 填充
+        hgj_ctx.fillStyle = grad;
+        hgj_ctx.fillText(text, 0, 0);
+
+        // 流光描边：渐变 + 流动虚线
+        hgj_ctx.shadowBlur = 0;
+        hgj_ctx.lineWidth = Math.max(1.6, size * 0.018);
+        var strokeGrad = hgj_ctx.createLinearGradient(0, -size, tw, 0);
+        strokeGrad.addColorStop(0, 'rgba(255,255,255,0.95)');
+        strokeGrad.addColorStop(0.35, hgj_hovered ? 'rgba(34,211,238,0.95)' : 'rgba(168,85,247,0.9)');
+        strokeGrad.addColorStop(0.7, 'rgba(255,255,255,0.9)');
+        strokeGrad.addColorStop(1, hgj_hovered ? 'rgba(249,115,22,0.95)' : 'rgba(236,72,153,0.9)');
+        hgj_ctx.strokeStyle = strokeGrad;
+        hgj_ctx.lineJoin = 'round';
+        hgj_ctx.setLineDash([size * 0.16, size * 0.11]);
+        hgj_ctx.lineDashOffset = -hgj_time * 0.09;
+        hgj_ctx.strokeText(text, 0, 0);
+        hgj_ctx.setLineDash([]);
+
+        // 逐字浮现高光（渐显阶段的擦除效果）
+        if (fade < 0.99) {
+            var maskW = tw * fade;
+            hgj_ctx.globalCompositeOperation = 'destination-in';
+            hgj_ctx.fillStyle = 'rgba(0,0,0,1)';
+            hgj_ctx.fillRect(-10, -size * 1.2, maskW + 10, size * 1.7);
+            hgj_ctx.globalCompositeOperation = 'source-over';
+        }
+
+        hgj_ctx.restore();
+
+        // 底部装饰线
+        hgj_ctx.save();
+        hgj_ctx.globalAlpha = fade * 0.55;
+        var lineY = baseY + size * 0.26;
+        var lineGrad = hgj_ctx.createLinearGradient(hgj_w * 0.2, lineY, hgj_w * 0.8, lineY);
+        lineGrad.addColorStop(0, 'rgba(99,102,241,0)');
+        lineGrad.addColorStop(0.5, hgj_hovered ? 'rgba(14,165,233,0.9)' : 'rgba(139,92,246,0.85)');
+        lineGrad.addColorStop(1, 'rgba(236,72,153,0)');
+        hgj_ctx.strokeStyle = lineGrad;
+        hgj_ctx.lineWidth = 1.4;
+        hgj_ctx.beginPath();
+        var lineW = tw * 1.15;
+        hgj_ctx.moveTo(hgj_w / 2 - lineW / 2, lineY);
+        hgj_ctx.lineTo(hgj_w / 2 + lineW / 2, lineY);
+        hgj_ctx.stroke();
+        hgj_ctx.restore();
+    }
+
+    // ===== 主循环 =====
+    var hgj_last = 0;
+    function hgj_loop(ts) {
+        var dt = hgj_last ? ts - hgj_last : 16;
+        hgj_last = ts;
+
+        if (hgj_running) hgj_time += dt;
+
+        // 平滑插值鼠标
+        hgj_mouse.tx += (hgj_mouse.x - hgj_mouse.tx) * 0.07;
+        hgj_mouse.ty += (hgj_mouse.y - hgj_mouse.ty) * 0.07;
+
+        // 3D 倾斜插值
+        hgj_tilt.rx += (hgj_tilt.trx - hgj_tilt.rx) * 0.1;
+        hgj_tilt.ry += (hgj_tilt.try_ - hgj_tilt.ry) * 0.1;
+        hgj_card.style.transform = 'rotateX(' + hgj_tilt.rx.toFixed(2) + 'deg) rotateY(' + hgj_tilt.ry.toFixed(2) + 'deg) translateZ(0)';
+
+        hgj_ctx.clearRect(0, 0, hgj_w, hgj_h);
+        hgj_drawParticles();
+        hgj_drawText();
+
+        requestAnimationFrame(hgj_loop);
+    }
+
+    // ===== 事件 =====
+    hgj_canvas.addEventListener('mousemove', function (e) {
+        var rect = hgj_canvas.getBoundingClientRect();
+        var mx = e.clientX - rect.left;
+        var my = e.clientY - rect.top;
+        hgj_mouse.x = mx - hgj_w / 2;
+        hgj_mouse.y = my - hgj_h / 2;
+        hgj_mouse.inside = true;
+
+        hgj_tilt.try_ = ((mx - hgj_w / 2) / hgj_w) * 8;
+        hgj_tilt.trx = -((my - hgj_h / 2) / hgj_h) * 7;
+    });
+
+    hgj_canvas.addEventListener('mouseenter', function () {
+        hgj_hovered = true;
+    });
+    hgj_canvas.addEventListener('mouseleave', function () {
+        hgj_hovered = false;
+        hgj_mouse.inside = false;
+        hgj_mouse.x = 0; hgj_mouse.y = 0;
+        hgj_tilt.trx = 0; hgj_tilt.try_ = 0;
+    });
+
+    hgj_toggleBtn.addEventListener('click', function () {
+        hgj_running = !hgj_running;
+        hgj_toggleBtn.textContent = hgj_running ? '⏸ 暂停动画' : '▶ 继续动画';
+    });
+
+    hgj_resetBtn.addEventListener('click', function () {
+        hgj_fadeStart = performance.now();
+    });
+
+    window.addEventListener('resize', function () {
+        hgj_resize();
+    });
+
+    // ===== 启动 =====
+    hgj_fadeStart = performance.now();
+    hgj_resize();
+    requestAnimationFrame(hgj_loop);
+})();
+</script>
+</body>
+</html>
