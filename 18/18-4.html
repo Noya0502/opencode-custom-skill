@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>18-4 ECharts 与 3D 地球可视化</title>
+<!-- 姓名：胡国静，日期：18-4 ECharts组合图与3D地球 -->
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+        min-height: 100vh; padding: 2rem 1.2rem 2.4rem;
+        background:
+            radial-gradient(circle at 10% 0%, rgba(99,102,241,0.16) 0%, transparent 46%),
+            radial-gradient(circle at 92% 100%, rgba(34,211,238,0.14) 0%, transparent 48%),
+            linear-gradient(160deg, #f8fafc 0%, #eef2ff 50%, #f0fdff 100%);
+        color: #1e293b; display: flex; flex-direction: column; align-items: center;
+    }
+    .hgj_back {
+        position: fixed; top: 1.2rem; right: 1.4rem;
+        padding: 0.55em 1.2em; font-size: 0.83rem;
+        color: #475569; text-decoration: none;
+        background: rgba(255,255,255,0.82);
+        border: 1px solid rgba(148,163,184,0.38);
+        border-radius: 2em; backdrop-filter: blur(8px);
+        box-shadow: 0 4px 12px rgba(15,23,42,0.06);
+        transition: all 0.3s ease; z-index: 30;
+    }
+    .hgj_back:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: translateY(-2px); }
+
+    .hgj_head { text-align: center; margin-bottom: 1.6rem; animation: hgj_fade 0.9s cubic-bezier(.22,1,.36,1) both; }
+    .hgj_head h1 {
+        font-size: clamp(1.2rem, 2.8vw, 1.6rem); font-weight: 800; letter-spacing: 0.05em;
+        background: linear-gradient(135deg, #4f46e5, #22d3ee 50%, #ec4899);
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hgj_head p { font-size: 0.78rem; color: #94a3b8; margin-top: 0.5rem; letter-spacing: 0.04em; }
+    @keyframes hgj_fade {
+        from { opacity: 0; transform: translateY(-14px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 并排布局 + 3D 入场 */
+    .hgj_grid {
+        width: min(96vw, 1240px);
+        display: grid; grid-template-columns: 1.1fr 1fr; gap: 1.4rem;
+        perspective: 1500px;
+    }
+    @media (max-width: 900px) { .hgj_grid { grid-template-columns: 1fr; } }
+
+    .hgj_card {
+        position: relative; border-radius: 1.1rem; overflow: hidden;
+        background: rgba(255,255,255,0.86);
+        border: 1px solid rgba(148,163,184,0.28);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 18px 40px -22px rgba(30,41,59,0.35), 0 2px 6px rgba(30,41,59,0.05);
+        transform-style: preserve-3d;
+        transition: transform 0.35s cubic-bezier(.22,1,.36,1), box-shadow 0.35s ease, border-color 0.35s ease;
+        animation: hgj_card-in 0.9s cubic-bezier(.22,1,.36,1) both;
+    }
+    .hgj_card:nth-child(1) { animation-delay: 0.1s; }
+    .hgj_card:nth-child(2) { animation-delay: 0.22s; }
+    @keyframes hgj_card-in {
+        from { opacity: 0; transform: rotateX(10deg) translateY(26px); }
+        to { opacity: 1; transform: rotateX(0) translateY(0); }
+    }
+    .hgj_card:hover {
+        transform: translateY(-6px) rotateX(1.2deg) translateZ(14px);
+        border-color: rgba(99,102,241,0.45);
+        box-shadow: 0 30px 56px -24px rgba(79,70,229,0.42), 0 0 30px -12px rgba(139,92,246,0.4);
+    }
+    .hgj_card-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 0.6rem; padding: 1rem 1.3rem 0.75rem;
+        border-bottom: 1px solid rgba(148,163,184,0.18);
+    }
+    .hgj_card-title { display: flex; align-items: center; gap: 0.55rem; }
+    .hgj_card-dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+    .hgj_card-title h2 { font-size: 0.95rem; font-weight: 700; color: #1e293b; letter-spacing: 0.02em; }
+    .hgj_card-sub { font-size: 0.7rem; color: #94a3b8; font-family: "Consolas", monospace; letter-spacing: 0.06em; }
+    .hgj_chart { width: 100%; height: 360px; padding: 0.4rem 0.7rem 0.7rem; }
+
+    .hgj_legend { display: flex; gap: 1rem; padding: 0 1.3rem 1rem; flex-wrap: wrap; }
+    .hgj_legend span { display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: #64748b; }
+    .hgj_legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+    /* ===== 3D 地球 ===== */
+    .hgj_globe-box {
+        position: relative; width: calc(100% - 1.4rem); margin: 0.4rem 0.7rem 0;
+        height: 360px; border-radius: 0.9rem; overflow: hidden;
+        background: radial-gradient(circle at 50% 42%, #172554 0%, #0b1220 55%, #050810 100%);
+        border: 1px solid rgba(34,211,238,0.18);
+        box-shadow: 0 0 30px -10px rgba(34,211,238,0.28) inset;
+        cursor: grab;
+    }
+    .hgj_globe-box.hgj_dragging { cursor: grabbing; }
+    #hgj_globe { display: block; width: 100%; height: 100%; }
+
+    .hgj_gtip {
+        position: absolute; left: 0; top: 0; pointer-events: none;
+        padding: 0.5rem 0.75rem; border-radius: 0.5rem;
+        background: rgba(8,14,26,0.94);
+        border: 1px solid rgba(34,211,238,0.5);
+        box-shadow: 0 10px 26px -10px rgba(0,0,0,0.9), 0 0 20px -8px rgba(34,211,238,0.7);
+        opacity: 0; transform: translateY(4px); transition: opacity 0.18s ease, transform 0.18s ease;
+        z-index: 6; white-space: nowrap;
+    }
+    .hgj_gtip.hgj_show { opacity: 1; transform: translateY(0); }
+    .hgj_gtip .hgj_gtip-name { font-size: 0.76rem; font-weight: 700; color: #e0f2fe; }
+    .hgj_gtip .hgj_gtip-val {
+        font-size: 0.68rem; font-family: "Consolas", monospace;
+        color: #22d3ee; margin-top: 0.15rem;
+    }
+    .hgj_globe-toolbar {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.6rem;
+        padding: 0.65rem 1.3rem 0.9rem; flex-wrap: wrap;
+    }
+    .hgj_mini-btn {
+        padding: 0.42em 0.95em; font-size: 0.72rem; font-weight: 700; font-family: inherit;
+        color: #475569; background: rgba(255,255,255,0.9);
+        border: 1px solid rgba(148,163,184,0.4); border-radius: 2em;
+        cursor: pointer; transition: all 0.22s ease;
+    }
+    .hgj_mini-btn:hover { background: #6366f1; color: #fff; border-color: #6366f1; transform: translateY(-1px); }
+    .hgj_globe-hint { font-size: 0.7rem; color: #94a3b8; letter-spacing: 0.03em; }
+    .hgj_globe-hint b { color: #0891b2; }
+
+    /* 加载动画遮罩 */
+    .hgj_loading {
+        position: absolute; inset: 0; z-index: 5;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.85rem;
+        background: rgba(255,255,255,0.94);
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    .hgj_loading.hgj_hide { opacity: 0; visibility: hidden; }
+    .hgj_spinner {
+        width: 42px; height: 42px; border-radius: 50%;
+        border: 3px solid rgba(99,102,241,0.18);
+        border-top-color: #6366f1;
+        border-right-color: #22d3ee;
+        animation: hgj_spin 0.85s linear infinite;
+    }
+    @keyframes hgj_spin { to { transform: rotate(360deg); } }
+    .hgj_loading-text { font-size: 0.74rem; color: #94a3b8; letter-spacing: 0.16em; font-family: "Consolas", monospace; }
+    .hgj_bar-loader { width: 120px; height: 3px; border-radius: 2px; background: rgba(99,102,241,0.15); overflow: hidden; }
+    .hgj_bar-loader::after {
+        content: ''; display: block; width: 40%; height: 100%;
+        background: linear-gradient(90deg, #6366f1, #22d3ee);
+        animation: hgj_slide 1.1s ease-in-out infinite;
+    }
+    @keyframes hgj_slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } }
+
+    .hgj_footer { margin-top: 1.5rem; font-size: 0.72rem; color: #94a3b8; letter-spacing: 0.05em; }
+    .hgj_footer b { color: #6366f1; }
+</style>
+</head>
+<body>
+<a href="../index.html" class="hgj_back">← 返回首页</a>
+
+<div class="hgj_head">
+    <h1>ECharts 图表与 3D 地球可视化</h1>
+    <p>柱状 + 折线组合图 · 3D 地球数据流向 · 本地依赖 · 加载动画</p>
+</div>
+
+<div class="hgj_grid">
+    <!-- 图表一：柱状 + 折线 -->
+    <div class="hgj_card">
+        <div class="hgj_card-head">
+            <div class="hgj_card-title">
+                <span class="hgj_card-dot" style="background:#6366f1;color:#6366f1"></span>
+                <h2>月度销售额与同比增长</h2>
+            </div>
+            <span class="hgj_card-sub">UNIT: 万元 / %</span>
+        </div>
+        <div class="hgj_chart" id="hgj_chartBar"></div>
+        <div class="hgj_legend">
+            <span><i style="background:#6366f1"></i>销售额（万元）</span>
+            <span><i style="background:#ec4899"></i>同比增长（%）</span>
+        </div>
+        <div class="hgj_loading" id="hgj_loading1">
+            <div class="hgj_spinner"></div>
+            <div class="hgj_loading-text">LOADING CHART</div>
+            <div class="hgj_bar-loader"></div>
+        </div>
+    </div>
+
+    <!-- 图表二：3D 地球 -->
+    <div class="hgj_card">
+        <div class="hgj_card-head">
+            <div class="hgj_card-title">
+                <span class="hgj_card-dot" style="background:#22d3ee;color:#22d3ee"></span>
+                <h2>全球节点访问流向 · 3D Earth</h2>
+            </div>
+            <span class="hgj_card-sub">GLOBAL TRAFFIC</span>
+        </div>
+        <div class="hgj_globe-box" id="hgj_globeBox">
+            <canvas id="hgj_globe"></canvas>
+            <div class="hgj_gtip" id="hgj_gtip">
+                <div class="hgj_gtip-name" id="hgj_gtipName">节点</div>
+                <div class="hgj_gtip-val" id="hgj_gtipVal">0 次访问</div>
+            </div>
+        </div>
+        <div class="hgj_globe-toolbar">
+            <button class="hgj_mini-btn" id="hgj_autoBtn">⏸ 暂停自转</button>
+            <button class="hgj_mini-btn" id="hgj_resetBtn">⟲ 重置视角</button>
+            <div class="hgj_globe-hint">🌐 拖拽旋转 · <b>滚轮缩放</b> · 悬停节点看数据</div>
+        </div>
+        <div class="hgj_loading" id="hgj_loading2">
+            <div class="hgj_spinner"></div>
+            <div class="hgj_loading-text">LOADING GLOBE</div>
+            <div class="hgj_bar-loader"></div>
+        </div>
+    </div>
+</div>
+
+<p class="hgj_footer">依赖：<b>18/cdn/echarts.js（本地文件）</b> · 地球为原生 Canvas 球面投影 · 自适应窗口大小</p>
+
+<script src="cdn/echarts.js"></script>
+<script>
+(function () {
+    var hgj_colors = {
+        indigo: '#6366f1',
+        violet: '#8b5cf6',
+        cyan: '#22d3ee',
+        pink: '#ec4899',
+        text: '#475569',
+        muted: '#94a3b8',
+        split: 'rgba(148,163,184,0.16)'
+    };
+
+    var hgj_months = ['1月', '2月', '3月', '4月', '5月', '6月'];
+    var hgj_sales = [820, 932, 901, 1034, 1290, 1330];
+    var hgj_growth = [12.5, 18.2, 8.6, 21.4, 32.1, 28.7];
+
+    var hgj_barChart = null;
+
+    // ===== 柱状 + 折线组合图 =====
+    function hgj_initBar() {
+        var dom = document.getElementById('hgj_chartBar');
+        hgj_barChart = echarts.init(dom, null, { renderer: 'canvas' });
+
+        hgj_barChart.setOption({
+            animationDuration: 1100,
+            animationEasing: 'cubicOut',
+            grid: { left: 52, right: 56, top: 42, bottom: 42 },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow',
+                    shadowStyle: { color: 'rgba(99,102,241,0.08)' }
+                },
+                backgroundColor: 'rgba(15,23,42,0.92)',
+                borderColor: 'rgba(99,102,241,0.6)',
+                borderWidth: 1,
+                padding: [8, 12],
+                textStyle: { color: '#e2e8f0', fontSize: 12 },
+                formatter: function (params) {
+                    var html = '<b style="color:#fff">' + params[0].axisValue + '</b><br/>';
+                    params.forEach(function (p) {
+                        var unit = p.seriesName.indexOf('同比') > -1 ? ' %' : ' 万元';
+                        html += p.marker + p.seriesName + '：<b>' + p.value + unit + '</b><br/>';
+                    });
+                    return html;
+                }
+            },
+            legend: { show: false },
+            xAxis: {
+                type: 'category',
+                data: hgj_months,
+                axisLine: { lineStyle: { color: 'rgba(148,163,184,0.35)' } },
+                axisTick: { show: false },
+                axisLabel: { color: hgj_colors.text, fontSize: 11, margin: 12 }
+            },
+            yAxis: [
+                {
+                    type: 'value', name: '销售额',
+                    nameTextStyle: { color: hgj_colors.muted, fontSize: 10, padding: [0, 0, 6, 0] },
+                    min: 600, max: 1500,
+                    splitLine: { lineStyle: { color: hgj_colors.split, type: 'dashed' } },
+                    axisLabel: { color: hgj_colors.muted, fontSize: 10 },
+                    axisLine: { show: false }
+                },
+                {
+                    type: 'value', name: '同比',
+                    nameTextStyle: { color: hgj_colors.muted, fontSize: 10, padding: [0, 0, 6, 0] },
+                    min: 0, max: 45,
+                    splitLine: { show: false },
+                    axisLabel: { color: hgj_colors.muted, fontSize: 10, formatter: '{value}%' },
+                    axisLine: { show: false }
+                }
+            ],
+            series: [
+                {
+                    name: '销售额',
+                    type: 'bar',
+                    data: hgj_sales,
+                    barWidth: '36%',
+                    itemStyle: {
+                        borderRadius: [6, 6, 0, 0],
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: hgj_colors.violet },
+                            { offset: 1, color: hgj_colors.indigo }
+                        ]),
+                        shadowColor: 'rgba(99,102,241,0.35)',
+                        shadowBlur: 10,
+                        shadowOffsetY: 4
+                    },
+                    emphasis: {
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: '#a78bfa' },
+                                { offset: 1, color: '#818cf8' }
+                            ]),
+                            shadowColor: 'rgba(139,92,246,0.65)',
+                            shadowBlur: 18
+                        }
+                    },
+                    label: {
+                        show: true, position: 'top',
+                        color: hgj_colors.indigo, fontSize: 10, fontWeight: 'bold'
+                    }
+                },
+                {
+                    name: '同比增长',
+                    type: 'line',
+                    yAxisIndex: 1,
+                    data: hgj_growth,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 7,
+                    lineStyle: {
+                        width: 2.4, color: hgj_colors.pink,
+                        shadowColor: 'rgba(236,72,153,0.45)', shadowBlur: 10, shadowOffsetY: 3
+                    },
+                    itemStyle: { color: hgj_colors.pink, borderColor: '#fff', borderWidth: 1.5 },
+                    areaStyle: {
+                        opacity: 0.14,
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: hgj_colors.pink },
+                            { offset: 1, color: 'rgba(236,72,153,0)' }
+                        ])
+                    },
+                    emphasis: {
+                        scale: 1.5,
+                        itemStyle: { shadowColor: hgj_colors.pink, shadowBlur: 14 }
+                    }
+                }
+            ]
+        });
+    }
+
+    // ================= 3D 地球 =================
+    var hgj_globeBox = document.getElementById('hgj_globeBox');
+    var hgj_globe = document.getElementById('hgj_globe');
+    var hgj_gctx = hgj_globe.getContext('2d');
+    var hgj_gtip = document.getElementById('hgj_gtip');
+    var hgj_gtipName = document.getElementById('hgj_gtipName');
+    var hgj_gtipVal = document.getElementById('hgj_gtipVal');
+
+    var hgj_dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var hgj_gw = 0, hgj_gh = 0, hgj_gr = 100, hgj_cx = 0, hgj_cy = 0;
+    var hgj_yaw = 0.55;         // 水平旋转
+    var hgj_pitch = 0.42;       // 俯仰
+    var hgj_zoom = 1;
+    var hgj_auto = true;
+    var hgj_dragging = false;
+    var hgj_last = { x: 0, y: 0 };
+    var hgj_hoverCity = null;
+    var hgj_pointer = { x: -999, y: -999 };
+    var hgj_t0 = performance.now();
+
+    // 城市节点（lat 纬度 / lon 经度 / value 访问量）
+    var hgj_cities = [
+        { name: '上海',     lat: 31.2,  lon: 121.5,  value: 1280 },
+        { name: '北京',     lat: 39.9,  lon: 116.4,  value: 960 },
+        { name: '深圳',     lat: 22.5,  lon: 114.1,  value: 880 },
+        { name: '东京',     lat: 35.7,  lon: 139.7,  value: 610 },
+        { name: '新加坡',   lat: 1.3,   lon: 103.8,  value: 640 },
+        { name: '孟买',     lat: 19.0,  lon: 72.8,   value: 460 },
+        { name: '法兰克福', lat: 50.1,  lon: 8.7,    value: 520 },
+        { name: '纽约',     lat: 40.7,  lon: -74.0,  value: 700 },
+        { name: '洛杉矶',   lat: 34.0,  lon: -118.2, value: 560 },
+        { name: '圣保罗',   lat: -23.5, lon: -46.6,  value: 380 },
+        { name: '悉尼',     lat: -33.9, lon: 151.2,  value: 420 },
+        { name: '开罗',     lat: 30.0,  lon: 31.2,   value: 300 }
+    ];
+
+    // 数据流向：以 上海 为枢纽的几条航线
+    var hgj_arcs = [
+        [0, 6], [0, 7], [0, 4], [0, 3], [7, 8], [6, 5], [9, 7], [8, 10]
+    ];
+
+    // ===== 球面坐标 → 屏幕 =====
+    function hgj_projectVec(vx, vy, vz) {
+        var cy1 = Math.cos(hgj_yaw), sy1 = Math.sin(hgj_yaw);
+        var x1 = vx * cy1 + vz * sy1;
+        var z1 = -vx * sy1 + vz * cy1;
+
+        var cp = Math.cos(hgj_pitch), sp = Math.sin(hgj_pitch);
+        var y2 = vy * cp - z1 * sp;
+        var z2 = vy * sp + z1 * cp;
+
+        return {
+            x: hgj_cx + x1 * hgj_gr * hgj_zoom,
+            y: hgj_cy - y2 * hgj_gr * hgj_zoom,
+            z: z2
+        };
+    }
+
+    function hgj_latLonToVec(lat, lon) {
+        var phi = lat * Math.PI / 180;
+        var th = lon * Math.PI / 180;
+        return {
+            x: Math.cos(phi) * Math.cos(th),
+            y: Math.sin(phi),
+            z: Math.cos(phi) * Math.sin(th)
+        };
+    }
+
+    // ===== 尺寸 =====
+    function hgj_resizeGlobe() {
+        var rect = hgj_globeBox.getBoundingClientRect();
+        hgj_gw = rect.width;
+        hgj_gh = rect.height;
+        hgj_globe.width = Math.round(hgj_gw * hgj_dpr);
+        hgj_globe.height = Math.round(hgj_gh * hgj_dpr);
+        hgj_gctx.setTransform(hgj_dpr, 0, 0, hgj_dpr, 0, 0);
+        hgj_cx = hgj_gw / 2;
+        hgj_cy = hgj_gh / 2;
+        hgj_gr = Math.min(hgj_gw, hgj_gh) * 0.36;
+    }
+
+    // ===== 球体与网格 =====
+    function hgj_drawSphere() {
+        var R = hgj_gr * hgj_zoom;
+        var g = hgj_gctx.createRadialGradient(
+            hgj_cx - R * 0.32, hgj_cy - R * 0.3, R * 0.15,
+            hgj_cx, hgj_cy, R * 1.05
+        );
+        g.addColorStop(0, '#1e3a8a');
+        g.addColorStop(0.45, '#0c1a3a');
+        g.addColorStop(1, '#04070f');
+        hgj_gctx.beginPath();
+        hgj_gctx.arc(hgj_cx, hgj_cy, R, 0, Math.PI * 2);
+        hgj_gctx.fillStyle = g;
+        hgj_gctx.fill();
+
+        // 外发光
+        hgj_gctx.save();
+        hgj_gctx.beginPath();
+        hgj_gctx.arc(hgj_cx, hgj_cy, R, 0, Math.PI * 2);
+        hgj_gctx.shadowColor = 'rgba(34,211,238,0.55)';
+        hgj_gctx.shadowBlur = 26;
+        hgj_gctx.strokeStyle = 'rgba(34,211,238,0.35)';
+        hgj_gctx.lineWidth = 1.2;
+        hgj_gctx.stroke();
+        hgj_gctx.restore();
+    }
+
+    function hgj_drawGrid() {
+        var front = new Path2D();
+        var back = new Path2D();
+        var lat, lon, t, v, p, prev, i, step;
+
+        // 纬线
+        for (lat = -75; lat <= 75; lat += 15) {
+            prev = null;
+            for (lon = -180; lon <= 180; lon += 8) {
+                v = hgj_latLonToVec(lat, lon);
+                p = hgj_projectVec(v.x, v.y, v.z);
+                if (prev) {
+                    var target = (p.z + prev.z) > 0 ? front : back;
+                    target.moveTo(prev.x, prev.y);
+                    target.lineTo(p.x, p.y);
+                }
+                prev = p;
+            }
+        }
+        // 经线
+        for (lon = -180; lon < 180; lon += 20) {
+            prev = null;
+            for (lat = -90; lat <= 90; lat += 6) {
+                v = hgj_latLonToVec(lat, lon);
+                p = hgj_projectVec(v.x, v.y, v.z);
+                if (prev) {
+                    var target2 = (p.z + prev.z) > 0 ? front : back;
+                    target2.moveTo(prev.x, prev.y);
+                    target2.lineTo(p.x, p.y);
+                }
+                prev = p;
+            }
+        }
+
+        hgj_gctx.lineWidth = 1;
+        hgj_gctx.strokeStyle = 'rgba(56,189,248,0.16)';
+        hgj_gctx.stroke(back);
+        hgj_gctx.strokeStyle = 'rgba(94,234,212,0.34)';
+        hgj_gctx.stroke(front);
+    }
+
+    // ===== 弧线 =====
+    function hgj_slerp(v1, v2, t, lift) {
+        var dot = Math.max(-1, Math.min(1, v1.x * v2.x + v1.y * v2.y + v1.z * v2.z));
+        var omega = Math.acos(dot);
+        var so = Math.sin(omega);
+        var a, b;
+        if (so < 0.0001) { a = 1 - t; b = t; }
+        else {
+            a = Math.sin((1 - t) * omega) / so;
+            b = Math.sin(t * omega) / so;
+        }
+        var r = 1 + lift;
+        return { x: (v1.x * a + v2.x * b) * r, y: (v1.y * a + v2.y * b) * r, z: (v1.z * a + v2.z * b) * r };
+    }
+
+    function hgj_drawArcs(time) {
+        var i, k, arcCol;
+        for (i = 0; i < hgj_arcs.length; i++) {
+            var c1 = hgj_cities[hgj_arcs[i][0]];
+            var c2 = hgj_cities[hgj_arcs[i][1]];
+            var v1 = hgj_latLonToVec(c1.lat, c1.lon);
+            var v2 = hgj_latLonToVec(c2.lat, c2.lon);
+
+            var pts = [];
+            var visible = 0;
+            for (k = 0; k <= 26; k++) {
+                var t = k / 26;
+                var sv = hgj_slerp(v1, v2, t, 0.16 * Math.sin(Math.PI * t));
+                var pr = hgj_projectVec(sv.x, sv.y, sv.z);
+                pts.push(pr);
+                if (pr.z > 0) visible++;
+            }
+            if (visible < 8) continue;
+
+            var isHot = hgj_hoverCity && (c1 === hgj_hoverCity || c2 === hgj_hoverCity);
+            var grad = hgj_gctx.createLinearGradient(pts[0].x, pts[0].y, pts[pts.length - 1].x, pts[pts.length - 1].y);
+            if (isHot) {
+                grad.addColorStop(0, 'rgba(34,211,238,0.95)');
+                grad.addColorStop(1, 'rgba(236,72,153,0.95)');
+                arcCol = grad;
+            } else {
+                grad.addColorStop(0, 'rgba(99,102,241,0.5)');
+                grad.addColorStop(1, 'rgba(34,211,238,0.55)');
+                arcCol = grad;
+            }
+
+            hgj_gctx.save();
+            hgj_gctx.beginPath();
+            for (k = 0; k < pts.length; k++) {
+                if (k === 0) hgj_gctx.moveTo(pts[k].x, pts[k].y);
+                else hgj_gctx.lineTo(pts[k].x, pts[k].y);
+            }
+            hgj_gctx.strokeStyle = arcCol;
+            hgj_gctx.lineWidth = isHot ? 2 : 1.2;
+            hgj_gctx.shadowColor = isHot ? 'rgba(34,211,238,0.9)' : 'rgba(99,102,241,0.6)';
+            hgj_gctx.shadowBlur = isHot ? 12 : 6;
+            hgj_gctx.stroke();
+
+            // 流动光点
+            var progress = ((time * 0.00035) + i * 0.17) % 1;
+            var idx = Math.min(pts.length - 1, Math.floor(progress * (pts.length - 1)));
+            var pt = pts[idx];
+            if (pt.z > 0) {
+                hgj_gctx.beginPath();
+                hgj_gctx.arc(pt.x, pt.y, isHot ? 3.2 : 2.2, 0, Math.PI * 2);
+                hgj_gctx.fillStyle = isHot ? '#f0abfc' : '#a5f3fc';
+                hgj_gctx.shadowColor = isHot ? '#ec4899' : '#22d3ee';
+                hgj_gctx.shadowBlur = 12;
+                hgj_gctx.fill();
+            }
+            hgj_gctx.restore();
+        }
+    }
+
+    // ===== 节点 =====
+    function hgj_drawCities() {
+        var i, c, v, p, isHover;
+        hgj_hoverCity = null;
+        for (i = 0; i < hgj_cities.length; i++) {
+            c = hgj_cities[i];
+            v = hgj_latLonToVec(c.lat, c.lon);
+            p = hgj_projectVec(v.x, v.y, v.z);
+
+            c._sx = p.x;
+            c._sy = p.y;
+            c._vis = p.z > 0;
+
+            if (!c._vis) continue;
+
+            isHover = false;
+            var ddx = hgj_pointer.x - p.x;
+            var ddy = hgj_pointer.y - p.y;
+            if (ddx * ddx + ddy * ddy < 196) {
+                isHover = true;
+                hgj_hoverCity = c;
+            }
+
+            var r = isHover ? 5.5 : 3.4;
+            var alpha = 0.55 + p.z * 0.45;
+
+            hgj_gctx.save();
+            hgj_gctx.beginPath();
+            hgj_gctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+            hgj_gctx.fillStyle = isHover ? '#f9a8d4' : 'rgba(34,211,238,' + alpha.toFixed(2) + ')';
+            hgj_gctx.shadowColor = isHover ? '#ec4899' : '#22d3ee';
+            hgj_gctx.shadowBlur = isHover ? 18 : 9;
+            hgj_gctx.fill();
+
+            // 脉冲圈
+            var pulse = (hgj_t0 % 1800) / 1800;
+            hgj_gctx.beginPath();
+            hgj_gctx.arc(p.x, p.y, r + pulse * 12, 0, Math.PI * 2);
+            hgj_gctx.strokeStyle = 'rgba(34,211,238,' + ((1 - pulse) * 0.5).toFixed(2) + ')';
+            hgj_gctx.lineWidth = 1;
+            hgj_gctx.stroke();
+
+            // 名称
+            if (isHover || p.z > 0.35) {
+                hgj_gctx.font = (isHover ? '700 11px' : '500 9px') + ' "Microsoft YaHei", sans-serif';
+                hgj_gctx.fillStyle = isHover ? '#fce7f3' : 'rgba(186,230,253,' + (0.45 + p.z * 0.55).toFixed(2) + ')';
+                hgj_gctx.textAlign = 'left';
+                hgj_gctx.textBaseline = 'middle';
+                hgj_gctx.fillText(c.name, p.x + 8, p.y - 1);
+            }
+            hgj_gctx.restore();
+        }
+    }
+
+    // ===== 渲染循环 =====
+    var hgj_lastTs = 0;
+    function hgj_renderGlobe(ts) {
+        var dt = hgj_lastTs ? Math.min(ts - hgj_lastTs, 50) : 16;
+        hgj_lastTs = ts;
+
+        if (hgj_auto && !hgj_dragging) hgj_yaw += dt * 0.00022;
+
+        hgj_gctx.clearRect(0, 0, hgj_gw, hgj_gh);
+        hgj_drawSphere();
+        hgj_drawGrid();
+        hgj_drawArcs(ts);
+        hgj_drawCities();
+
+        // 悬停提示
+        if (hgj_hoverCity) {
+            hgj_gtipName.textContent = hgj_hoverCity.name;
+            hgj_gtipVal.textContent = hgj_hoverCity.value + ' 次访问';
+            var tx = hgj_hoverCity._sx + 14;
+            var ty = hgj_hoverCity._sy - 16;
+            if (tx > hgj_gw - 120) tx = hgj_hoverCity._sx - 120;
+            if (ty < 6) ty = 6;
+            hgj_gtip.style.left = tx + 'px';
+            hgj_gtip.style.top = ty + 'px';
+            hgj_gtip.classList.add('hgj_show');
+        } else {
+            hgj_gtip.classList.remove('hgj_show');
+        }
+
+        requestAnimationFrame(hgj_renderGlobe);
+    }
+
+    // ===== 地球交互 =====
+    hgj_globeBox.addEventListener('pointerdown', function (e) {
+        hgj_dragging = true;
+        hgj_last.x = e.clientX;
+        hgj_last.y = e.clientY;
+        hgj_globeBox.classList.add('hgj_dragging');
+        hgj_globeBox.setPointerCapture(e.pointerId);
+    });
+
+    hgj_globeBox.addEventListener('pointermove', function (e) {
+        var rect = hgj_globeBox.getBoundingClientRect();
+        hgj_pointer.x = e.clientX - rect.left;
+        hgj_pointer.y = e.clientY - rect.top;
+
+        if (hgj_dragging) {
+            hgj_yaw += (e.clientX - hgj_last.x) * 0.006;
+            hgj_pitch += (e.clientY - hgj_last.y) * 0.004;
+            hgj_pitch = Math.max(-1.1, Math.min(1.1, hgj_pitch));
+            hgj_last.x = e.clientX;
+            hgj_last.y = e.clientY;
+        }
+    });
+
+    hgj_globeBox.addEventListener('pointerup', function (e) {
+        hgj_dragging = false;
+        hgj_globeBox.classList.remove('hgj_dragging');
+        try { hgj_globeBox.releasePointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    hgj_globeBox.addEventListener('pointerleave', function () {
+        hgj_dragging = false;
+        hgj_pointer.x = -999;
+        hgj_pointer.y = -999;
+        hgj_globeBox.classList.remove('hgj_dragging');
+    });
+
+    hgj_globeBox.addEventListener('wheel', function (e) {
+        e.preventDefault();
+        hgj_zoom = Math.max(0.75, Math.min(1.45, hgj_zoom * (e.deltaY < 0 ? 1.08 : 0.93)));
+    }, { passive: false });
+
+    document.getElementById('hgj_autoBtn').addEventListener('click', function () {
+        hgj_auto = !hgj_auto;
+        this.textContent = hgj_auto ? '⏸ 暂停自转' : '▶ 开始自转';
+    });
+
+    document.getElementById('hgj_resetBtn').addEventListener('click', function () {
+        hgj_yaw = 0.55;
+        hgj_pitch = 0.42;
+        hgj_zoom = 1;
+    });
+
+    // ===== 启动 =====
+    function hgj_boot() {
+        var l1 = document.getElementById('hgj_loading1');
+        var l2 = document.getElementById('hgj_loading2');
+
+        hgj_resizeGlobe();
+        requestAnimationFrame(hgj_renderGlobe);
+
+        if (typeof echarts === 'undefined') {
+            l1.querySelector('.hgj_loading-text').textContent = 'ECHARTS 加载失败';
+            l1.classList.add('hgj_hide');
+        } else {
+            setTimeout(function () {
+                hgj_initBar();
+                l1.classList.add('hgj_hide');
+            }, 420);
+        }
+
+        setTimeout(function () {
+            l2.classList.add('hgj_hide');
+        }, 620);
+    }
+
+    // ===== 响应式 =====
+    var hgj_resizeTimer = null;
+    window.addEventListener('resize', function () {
+        clearTimeout(hgj_resizeTimer);
+        hgj_resizeTimer = setTimeout(function () {
+            if (hgj_barChart) hgj_barChart.resize();
+            hgj_resizeGlobe();
+        }, 120);
+    });
+
+    hgj_boot();
+})();
+</script>
+</body>
+</html>
